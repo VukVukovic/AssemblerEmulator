@@ -1,0 +1,4 @@
+.section ivtp:
+    addb pera, mika
+    .equ pera, - 2 + 5 - 4
+.end

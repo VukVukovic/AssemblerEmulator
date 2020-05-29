@@ -1,3 +1,18 @@
+# Ignore all
+*
+
+# Unignore all with extensions
+!*.*
+
+# Unignore all dirs
+!*/
+
+#Flex/Bison
+location.hh
+parser.cc
+parser.hh
+scanner.cpp
+
 # Prerequisites
 *.d
 
@@ -30,3 +45,7 @@
 *.exe
 *.out
 *.app
+
+.DS_Store
+build/
+assembler
