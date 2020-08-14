@@ -1,8 +1,8 @@
 #include "driver.hh"
 #include "parser.hh"
 
-driver::driver ()
-  : trace_parsing (false), trace_scanning (false)
+driver::driver (Code& code)
+  : code(code), trace_parsing (false), trace_scanning (false)
 {
   variables["one"] = 1;
   variables["two"] = 2;

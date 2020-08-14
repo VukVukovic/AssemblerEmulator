@@ -13,8 +13,9 @@ YY_DECL;
 // Conducting the whole scanning and parsing of Calc++.
 class driver
 {
+  Code& code;
 public:
-  driver ();
+  driver (Code &code);
 
   std::map<std::string, int> variables;
 
@@ -32,5 +33,6 @@ public:
   bool trace_scanning;
   // The token's location used by the scanner.
   yy::location location;
+  Code& getCode() { return code; }
 };
 #endif // ! DRIVER_HH
