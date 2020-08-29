@@ -28,14 +28,13 @@ int main (int argc, char *argv[])
       for (auto byte : p.second.getBytes())
         cout << getHex(byte)  << " ";
     }
-
-    cout << endl << "---------------------" << endl;
-    cout << "SYMBOLS: "<< endl;
-    code.symbolTable.printSymbolTable(cout);
   }
 
   try {
     code.symbolTable.resolveSymbols();
+    cout << endl << "---------------------" << endl;
+    cout << "SYMBOLS: "<< endl;
+    code.symbolTable.printSymbolTable(cout);
   } catch (const AssemblerException& e) {
     cout << e.what() << " (" << e.getProblem() << ")" << endl;
   }

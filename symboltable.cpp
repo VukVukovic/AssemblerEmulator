@@ -20,6 +20,8 @@ void SymbolTable::addEqu(const string& equSymbol, int value, const vector<pair<i
   }
   else {
     equTable[equSymbol] = EQUEntry{};
+    equTable[equSymbol].value = value;
+    equTable[equSymbol].symbol = equSymbol;
     equTable[equSymbol].depend = usedSymbols;
     for (auto us : usedSymbols)
       waiting[us.second].push_back(equSymbol);
@@ -32,7 +34,7 @@ void SymbolTable::addUsage(const string& symbol, int size, const string& section
 
 void SymbolTable::printSymbolTable(ostream &out) {
   for (auto s : symbols) {
-    out << s.first << std::endl;
+    out << s.first << '\t' << s.second.value << '\t' << s.second.section <<std::endl;
   }
   out << "----------------------------" << endl;
   printEquTable(out);
@@ -42,8 +44,9 @@ void SymbolTable::printSymbolTable(ostream &out) {
 void SymbolTable::resolveSymbols() {
   for (const auto& equRow : equTable) {
     if (symbols.find(equRow.first)==symbols.end() || !symbols[equRow.first].resolved)
-      if (equTable[equRow.first].canBeResolved(*this))
+      if (equTable[equRow.first].canBeResolved(*this)) {
         equTable[equRow.first].resolve(*this);
+      }
   }
 
   string problematic;
@@ -87,14 +90,15 @@ void SymbolTable::EQUEntry::resolve(SymbolTable& symbolTable) {
       throw ClassificationIndexInvalid("Problem with symbol " + symbol + " and classification index of " + ci.first);
   }
 
-  int value = 0; string section = "/ABS";
+  int valueAdd = 0; string section = "/ABS";
   for (const auto& p : depend) {
-    value += p.first * symbolTable.symbols[p.second].value;
+    valueAdd += p.first * symbolTable.symbols[p.second].value;
     if (classificationIndex[symbolTable.symbols[p.second].section] == 1)
       section = symbolTable.symbols[p.second].section;
   }
 
-  symbolTable.symbols[symbol] = {value, section, false, true};
+  cout << "Resolved " << symbol << " " << value + valueAdd << " " << section << endl;
+  symbolTable.symbols[symbol] = {value + valueAdd, section, false, true};
 
   for (const string& w : symbolTable.waiting[symbol])
     if (symbolTable.equTable[w].canBeResolved(symbolTable))
