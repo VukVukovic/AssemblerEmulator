@@ -14,6 +14,8 @@
   #include "register.h"
   #include "addressing.h"
   #include "instruction.h"
+  #include "symbolliterallist.h"
+  #include "memdirective.h"
 }
 
 // The parsing context.
@@ -22,7 +24,7 @@
 %locations
 
 %define parse.trace
-%define parse.error verbose 
+%define parse.error verbose
 
 %code {
   #include "driver.hh"
@@ -40,7 +42,6 @@
   GLOBAL
   EXTERN
   SECTION
-  END_DIR
   SKIP
   EQU
   BYTE
@@ -74,13 +75,19 @@
 %type <int> literal_sign;
 %type <std::vector<std::string>*> symbol_list;
 %type <Instruction*> instruction;
+%type <std::vector<SymLitNode*>*> sym_lit_list;
+%type <std::vector<SymLitSignNode>*> sym_lit_expr;
+%type <std::vector<SymLitSignNode>*> expr_rest;
+%type <SymLitNode*> sym_lit;
+%type <std::string> label;
+%type <MemDirective*> mem_directive;
 
 %printer { yyo << $$; } <*>;
 
 %%
 %start _program;
-_program: 
-  program  { std::cout << "ALL" << std::endl; };
+_program:
+  program  { };
 
 program:
   preamble sections {};
@@ -90,22 +97,50 @@ preamble:
 | preamble indep_directive {};
 
 indep_directive:
-  GLOBAL symbol_list			{
-    for (auto s : *($2)) 
-      cout << "sym:" << s << endl;
-   }
-|	EXTERN symbol_list			{}
-|	EQU SYMBOL "," sym_lit_expr	{};
+  GLOBAL symbol_list {
+    for (std::string symbol : *($2)) {
+      drv.getCode().addGlobal(symbol);
+    }
+    delete $2;
+  }
+|	EXTERN symbol_list			{
+  for (std::string symbol : *($2)) {
+    drv.getCode().addExtern(symbol);
+  }
+  delete $2;
+}
+|	EQU SYMBOL "," sym_lit_expr	{
+  int value = 0;
+  vector<pair<int, string>> symbols;
+  for (auto n : *($4)) {
+    if (n.node->type() == 'L')
+      value += n.sign*((LiteralNode*)n.node)->literal;
+    else if (n.node->type() == 'S')
+      symbols.push_back({n.sign, ((SymbolNode*)n.node)->symbol});
+  }
+  try {
+    drv.getCode().addEqu($2, value, symbols);
+  } catch(exception& e) {
+    for (auto n : *($4))
+      delete n.node;
+    delete $4;
+    throw yy::parser::syntax_error(drv.location, e.what());
+  }
+
+  for (auto n : *($4))
+    delete n.node;
+  delete $4;
+};
 
 symbol_list:
 	SYMBOL 					{ $$ = new std::vector<std::string>({$1}); }
 |	symbol_list "," SYMBOL  { ($1)->push_back($3); $$ = $1; };
 
 sym_lit_list:
-	SYMBOL  { }
-| literal { }
-|	sym_lit_list "," SYMBOL {  }
-|	sym_lit_list "," literal { };
+	SYMBOL  { $$ = new std::vector<SymLitNode*>(); $$->push_back(new SymbolNode($1)); }
+| literal { $$ = new std::vector<SymLitNode*>(); $$->push_back(new LiteralNode($1)); }
+|	sym_lit_list "," SYMBOL { $$ = $1; $$->push_back(new SymbolNode($3));  }
+|	sym_lit_list "," literal { $$ = $1; $$->push_back(new LiteralNode($3)); };
 
 literal:
   literal_sign { $$ = $1; }
@@ -120,44 +155,80 @@ literal_sign:
 | "-" literal_no_sign { $$ = -$2; };
 
 sym_lit:
-  SYMBOL { }
-| literal_no_sign { };
+  SYMBOL { $$ = new SymbolNode($1); }
+| literal_no_sign { $$ = new LiteralNode($1); };
 
 sym_lit_expr:
-  "+" sym_lit expr_rest {}
-| "-" sym_lit expr_rest {}
-| sym_lit expr_rest {};
+  "+" sym_lit expr_rest { $$ = $3; $$->push_back({+1, $2}); }
+| "-" sym_lit expr_rest { $$ = $3; $$->push_back({-1, $2}); }
+| sym_lit expr_rest { $$ = $2; $$->push_back({+1, $1}); };
 
 expr_rest:
-  %empty {}
-| "+" sym_lit expr_rest {}
-| "-" sym_lit expr_rest {};
+  %empty { $$ = new std::vector<SymLitSignNode>(); }
+| "+" sym_lit expr_rest { $$ = $3; $$->push_back({+1, $2}); }
+| "-" sym_lit expr_rest { $$ = $3; $$->push_back({-1, $2}); };
 
 sections:
   %empty {}
 | section sections {};
 
 section:
-  SECTION SYMBOL ":" { drv.getCode().beginSection($2); } expressions { };
+  SECTION SYMBOL ":" {
+    try {
+      drv.getCode().beginSection($2);
+    } catch(exception& e) { throw yy::parser::syntax_error(drv.location, e.what()); }
+  } expressions { };
 
 expressions:
 	%empty { }
 |	expressions expression { };
 
 expression:
-	directive 	{}
-|	label 		  {}
-|	instruction	{ try { drv.getCode().addInstruction($1->getEncoding()); } catch(exception& e) { throw yy::parser::syntax_error(drv.location, e.what()); } };
+	directive 	{ /* handled in each directive */}
+|	label 		  {
+  try {
+    drv.getCode().addLabel($1);
+  } catch(exception& e) { throw yy::parser::syntax_error(drv.location, e.what()); }
+}
+|	instruction	{
+  try {
+    drv.getCode().addInstructionDirective($1->getEncoding());
+  } catch(exception& e) { throw yy::parser::syntax_error(drv.location, e.what()); }
+};
+
+label:
+  SYMBOL ":" { $$ = $1; };
 
 directive:
 	indep_directive {}
-|	END_DIR { /* yy acept */}
-|	SKIP literal {}
-|	BYTE sym_lit_list {}
-|	WORD sym_lit_list {};
+| mem_directive { drv.getCode().addInstructionDirective($1->getEncoding()); delete $1; };
 
-label:
-	SYMBOL ":" {};
+mem_directive:
+	SKIP literal { $$ = new SkipDirective($2); }
+|	BYTE sym_lit_list {
+  ByteWordDirective *dir = new ByteWordDirective(1);
+  for (auto n : *($2)) {
+    if (n->type() == 'L')
+      dir->addLiteral(((LiteralNode*)n)->literal);
+    else if (n->type() == 'S')
+      dir->addSymbol(((SymbolNode*)n)->symbol);
+    delete n;
+  }
+  delete $2;
+  $$ = dir;
+}
+|	WORD sym_lit_list {
+  ByteWordDirective *dir = new ByteWordDirective(2);
+  for (auto n : *($2)) {
+    if (n->type() == 'L')
+      dir->addLiteral(((LiteralNode*)n)->literal);
+    else if (n->type() == 'S')
+      dir->addSymbol(((SymbolNode*)n)->symbol);
+    delete n;
+  }
+  delete $2;
+  $$ = dir;
+};
 
 instruction:
   INSTR_0 { $$ = new Instruction($1); }

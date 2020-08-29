@@ -11,13 +11,19 @@ struct SymbolEncodingEntry {
     SymbolEncodingEntry(const string& symbol, int location, int size) : symbol(symbol), location(location), size(size) {}
 };
 
-struct Encoding {
-    int offset = 0;
-    vector<char> bytes;
-    vector<SymbolEncodingEntry> symbolLocations;
-    void add(const Encoding& encoding);
-    //Encoding() = default;
-    Encoding(const vector<char>& bytes) : bytes(bytes) {}
-    Encoding(const vector<char>& bytes, const SymbolEncodingEntry& see) : bytes(bytes), symbolLocations({see}) {}
+class Encoding {
+  int offset = 0;
+  vector<char> bytes;
+  vector<SymbolEncodingEntry> symbolLocations;
+
+public:
+  Encoding() = default;
+  Encoding(const vector<char>& bytes) : bytes(bytes) {}
+  Encoding(const vector<char>& bytes, const SymbolEncodingEntry& see) : bytes(bytes), symbolLocations({see}) {}
+
+  static void addBytes(int value, int size, vector<char>& bytes);
+  void add(const Encoding& encoding);
+  const vector<char>& getBytes() const { return bytes; }
+  const vector<SymbolEncodingEntry>& getSymbolLocations() const { return symbolLocations; }
 };
 #endif

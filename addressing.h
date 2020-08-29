@@ -10,12 +10,12 @@ using namespace std;
 class Addressing {
 protected:
     virtual char operandDescr() const = 0;
-    static void addBytes(int value, int size, vector<char>& bytes);
 
 public:
     virtual bool isImmed() const = 0;
     virtual int getPreferedSize() const = 0;
     virtual Encoding getEncoding(int size) const = 0;
+    virtual ~Addressing() {}
 };
 
 class ImmedLiteral : public Addressing {
@@ -44,7 +44,7 @@ public:
     Encoding getEncoding(int size) const override;
 };
 
-class RegisterDirect : public Addressing { 
+class RegisterDirect : public Addressing {
     Register reg;
 
 protected:
@@ -57,7 +57,7 @@ public:
     Encoding getEncoding(int size) const override;
 };
 
-class RegisterIndirect : public Addressing { 
+class RegisterIndirect : public Addressing {
     Register reg;
 
 protected:
@@ -82,7 +82,7 @@ public:
     bool isImmed() const override { return false; }
     int getPreferedSize() const override { return 0; }
     Encoding getEncoding(int size) const override;
-}; 
+};
 
 class RegisterIndDispSymbol : public Addressing {
     Register reg;

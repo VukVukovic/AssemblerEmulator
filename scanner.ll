@@ -55,7 +55,7 @@ register_pc pc
 ".global"   return yy::parser::make_GLOBAL(loc);
 ".extern"   return yy::parser::make_EXTERN(loc);
 ".section"  return yy::parser::make_SECTION(loc);
-".end"      return yy::parser::make_END_DIR(loc);
+".end"      return yy::parser::make_END(loc);
 ".skip"     return yy::parser::make_SKIP(loc);
 ".equ"      return yy::parser::make_EQU(loc);
 ".byte"     return yy::parser::make_BYTE(loc);
