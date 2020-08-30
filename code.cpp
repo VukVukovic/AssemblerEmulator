@@ -8,6 +8,7 @@ void Code::beginSection(const string& section) {
 
     currentSection = section;
     encodedSections[currentSection] = Encoding{};
+    symbolTable.addLabel(currentSection, currentSection, 0);
 }
 
 void Code::addInstructionDirective(const Encoding& encoding) {

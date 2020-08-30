@@ -118,6 +118,7 @@ indep_directive:
     else if (n.node->type() == 'S')
       symbols.push_back({n.sign, ((SymbolNode*)n.node)->symbol});
   }
+  reverse(symbols.begin(), symbols.end());
   try {
     drv.getCode().addEqu($2, value, symbols);
   } catch(exception& e) {

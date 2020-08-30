@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <set>
 using namespace std;
 
 struct DuplicateSymbols : public exception {
@@ -45,10 +46,10 @@ class SymbolTable {
   struct STEntry {
     int value = 0;
     string section;
-    bool isExtern = false;
-    bool resolved = true;
   };
   map<string, STEntry> symbols;
+  set<string> externSymbols;
+  set<string> globalSymbols;
 
   struct EQUEntry {
     string symbol;

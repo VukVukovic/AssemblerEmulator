@@ -2,21 +2,21 @@
 #include "symboltable.h"
 
 void SymbolTable::addExtern(const string& symbol) {
-  symbols[symbol] = {0, "/EXT", true, true};
+  externSymbols.insert(symbol);
 }
 
 void SymbolTable::addGlobal(const string& symbol) {
-  symbols[symbol] = STEntry();
+  globalSymbols.insert(symbol);
 }
 
 void SymbolTable::addLabel(const string& symbol, const string& section, int value) {
-  symbols[symbol] = {value, section, false, true};
+  symbols[symbol] = {value, section};
 }
 
 void SymbolTable::addEqu(const string& equSymbol, int value, const vector<pair<int, string>>& usedSymbols) {
   // handle duplicate in both cases
   if (usedSymbols.size() == 0) {
-    symbols[equSymbol] = {value, "/ABS", false, true};
+    symbols[equSymbol] = {value, "/ABS"};
   }
   else {
     equTable[equSymbol] = EQUEntry{};
@@ -42,8 +42,12 @@ void SymbolTable::printSymbolTable(ostream &out) {
 }
 
 void SymbolTable::resolveSymbols() {
+  for (const string& externSymbol : externSymbols) {
+    symbols[externSymbol] = {0, "/EXT"};
+  }
+
   for (const auto& equRow : equTable) {
-    if (symbols.find(equRow.first)==symbols.end() || !symbols[equRow.first].resolved)
+    if (symbols.find(equRow.first)==symbols.end())
       if (equTable[equRow.first].canBeResolved(*this)) {
         equTable[equRow.first].resolve(*this);
       }
@@ -52,7 +56,7 @@ void SymbolTable::resolveSymbols() {
   string problematic;
   bool problem = false;
   for (const auto& equRow : equTable)
-    if (symbols.find(equRow.first)==symbols.end() || !symbols[equRow.first].resolved) {
+    if (symbols.find(equRow.first)==symbols.end()) {
       if (problem)
         problematic += ", ";
       problematic += equRow.first;
@@ -67,7 +71,7 @@ void SymbolTable::resolveSymbols() {
 bool SymbolTable::EQUEntry::canBeResolved(const SymbolTable& symbolTable) const {
   bool canResolve = true;
   for (const auto& p : depend)
-    canResolve &= (symbolTable.symbols.find(p.second) != symbolTable.symbols.end() && symbolTable.symbols.at(p.second).resolved);
+    canResolve &= (symbolTable.symbols.find(p.second) != symbolTable.symbols.end());
   return canResolve;
 }
 
@@ -75,6 +79,8 @@ void SymbolTable::EQUEntry::resolve(SymbolTable& symbolTable) {
   map<string, int> classificationIndex;
 
   for (const auto& p : depend) {
+    if (symbolTable.symbols[p.second].section == "/EXT" && p.first == -1)
+      throw ClassificationIndexInvalid("Problem with symbol " + symbol + " - " + p.second + " is not allowed");
     int index = p.first;
     if (symbolTable.symbols[p.second].section == "/EXT") index = 1;
     else if (symbolTable.symbols[p.second].section == "/ABS") index = 0;
@@ -98,7 +104,7 @@ void SymbolTable::EQUEntry::resolve(SymbolTable& symbolTable) {
   }
 
   cout << "Resolved " << symbol << " " << value + valueAdd << " " << section << endl;
-  symbolTable.symbols[symbol] = {value + valueAdd, section, false, true};
+  symbolTable.symbols[symbol] = {value + valueAdd, section};
 
   for (const string& w : symbolTable.waiting[symbol])
     if (symbolTable.equTable[w].canBeResolved(symbolTable))
@@ -108,7 +114,7 @@ void SymbolTable::EQUEntry::resolve(SymbolTable& symbolTable) {
 void SymbolTable::printEquTable(ostream &out) {
   for (auto e : equTable) {
     out << e.first << " = ";
-    for (auto s : e.second.depend) out << (s.first ? '+' : '-') << s.second << " ";
+    for (auto s : e.second.depend) out << (s.first>0 ? '+' : '-') << s.second << " ";
     out << "\t[";
     for (auto s : waiting[e.first]) out << s << ", ";
     out << "]"<<endl;
