@@ -41,10 +41,33 @@ void SymbolTable::printSymbolTable(ostream &out) {
 
 }
 
-void SymbolTable::resolveSymbols() {
+void SymbolTable::checkExternGlobal() const {
+  set<string> intersect;
+  set_intersection(externSymbols.begin(), externSymbols.end(),
+                    globalSymbols.begin(),globalSymbols.end(),
+                    inserter(intersect,intersect.begin()));
+  if (intersect.size() > 0) {
+    string problematicSymbols = "";
+    for (const string& s : intersect) {
+      if (problematicSymbols.length() > 0)
+        problematicSymbols += ", ";
+      problematicSymbols += s;
+    }
+    throw InvalidSymbolDirective(problematicSymbols + " cannot be marked both extern and global");
+  }
+}
+
+void SymbolTable::resolveExtern() {
   for (const string& externSymbol : externSymbols) {
+    if (symbols.find(externSymbol) != symbols.end())
+      throw InvalidSymbolDirective("Symbol " + externSymbol + " cannot be marked extern");
     symbols[externSymbol] = {0, "/EXT"};
   }
+}
+
+void SymbolTable::resolveSymbols() {
+  checkExternGlobal();
+  resolveExtern();
 
   for (const auto& equRow : equTable) {
     if (symbols.find(equRow.first)==symbols.end())
@@ -65,7 +88,6 @@ void SymbolTable::resolveSymbols() {
 
   if (problem)
     throw SymbolsCannotBeResolved(problematic);
-
 }
 
 bool SymbolTable::EQUEntry::canBeResolved(const SymbolTable& symbolTable) const {

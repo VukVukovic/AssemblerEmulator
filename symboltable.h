@@ -37,7 +37,15 @@ struct SymbolsCannotBeResolved : public AssemblerException {
     using AssemblerException::AssemblerException;
 
     virtual const char* what() const throw() {
-        return "Symbols could not be resolved";
+        return "Symbol(s) could not be resolved - undefined or circular referencing";
+    }
+};
+
+struct InvalidSymbolDirective : public AssemblerException {
+    using AssemblerException::AssemblerException;
+
+    virtual const char* what() const throw() {
+        return "Invalid symbol property directive";
     }
 };
 
@@ -74,6 +82,9 @@ class SymbolTable {
   vector<Backpatch> backpatching;
 
   void printEquTable(ostream &out);
+
+  void checkExternGlobal() const;
+  void resolveExtern();
 
 public:
   void addExtern(const string& symbol);
