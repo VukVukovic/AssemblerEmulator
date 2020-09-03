@@ -8,11 +8,15 @@ struct SymbolEncodingEntry {
     string symbol;
     int location;
     int size;
-    SymbolEncodingEntry(const string& symbol, int location, int size) : symbol(symbol), location(location), size(size) {}
+    int pcRelOffset;
+    SymbolEncodingEntry(const string& symbol, int location, int size, int pcRelOffset)
+    : symbol(symbol), location(location), size(size), pcRelOffset(pcRelOffset) {}
+    SymbolEncodingEntry(const string& symbol, int location, int size)
+    : SymbolEncodingEntry(symbol, location, size, 0) {}
 };
 
 class Encoding {
-  int offset = 0;
+  //int offset = 0;
   vector<char> bytes;
   vector<SymbolEncodingEntry> symbolLocations;
 

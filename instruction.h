@@ -24,5 +24,7 @@ public:
     void addOperand(Addressing* operand);
     int numOfOperands() const { return operands.size(); }
     Encoding getEncoding() const;
+    ~Instruction();
+    Instruction(const Instruction&) = delete;
 };
 #endif

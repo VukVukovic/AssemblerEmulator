@@ -32,11 +32,11 @@ bool Instruction::validAdressing() const {
     if (numOfOperands() == 2) {
         if (type == "cmp" || type == "test")
             return true;
-        if (type == "xchg" && (operands[0]->isImmed() || operands[1]->isImmed()))
+        if (type == "xchg" && (operands[0]->getType() == IMMED || operands[1]->getType() == IMMED))
             return false;
-        if (operands[1]->isImmed())
+        if (operands[1]->getType() == IMMED)
             return false;
-    }  else if (numOfOperands() == 1 && type == "pop" && operands[0]->isImmed()) {
+    }  else if (numOfOperands() == 1 && type == "pop" && operands[0]->getType() == IMMED) {
         return false;
     }
     return true;
@@ -46,12 +46,9 @@ Encoding Instruction::getEncoding() const {
     if (!validAdressing())
         throw AssemblerException("Adressing used in instruction is not valid");
 
-    //cout << "Instruction" << type << endl;
     int size = preferedSize;
-    //cout << "Instruction size: " << size << endl;
     for (auto operand : operands) {
         int operandSize = operand->getPreferedSize();
-        //cout << "Operand size: " << operandSize << endl;
 
         if (size != operandSize && operandSize != 0) {
             if (size == 0)
@@ -64,13 +61,26 @@ Encoding Instruction::getEncoding() const {
     if (size == 0)
         size = 2; // 2 BYTES is default if not specified differently
 
-    Encoding instructionEncoding({instrutionDescr(size)});
+    int pcRelOffset = 0;
     for (auto operand : operands)
+      pcRelOffset += operand->getBytesSize(size);
+
+    Encoding instructionEncoding({instrutionDescr(size)});
+    for (auto operand : operands) {
+        operand->setPCRelOffset(pcRelOffset);
+        pcRelOffset -= operand->getBytesSize(size);
+
         instructionEncoding.add(operand->getEncoding(size));
+    }
 
     return instructionEncoding;
 }
 
 char Instruction::instrutionDescr(int size) const {
     return (opCodes.at(type) << 3) + ((size == 1 ? 0 : 1) << 2);
+}
+
+Instruction::~Instruction() {
+  for (auto operand : operands)
+    delete operand;
 }

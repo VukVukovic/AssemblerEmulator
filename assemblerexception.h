@@ -14,7 +14,7 @@ struct AssemblerException : public exception {
         return "Assembler exception";
     }
 
-    const string& getProblem() const { return problem; }
+    string getProblem() const { return problem; }
 };
 
 #endif

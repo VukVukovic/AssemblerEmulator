@@ -51,7 +51,7 @@ Encoding PCRelative::getEncoding(int size) const {
     Encoding::addBytes(0, 2, bytes);
     return Encoding(
         bytes,
-        SymbolEncodingEntry(symbol, 0, 2)
+        SymbolEncodingEntry(symbol, 0, 2, pcRelOffset)
     );
 }
 

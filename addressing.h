@@ -7,15 +7,21 @@
 
 using namespace std;
 
+enum AddressingType { IMMED, REGDIR, REGIND, PCREL, MEMDIR};
+
 class Addressing {
 protected:
     virtual char operandDescr() const = 0;
 
 public:
-    virtual bool isImmed() const = 0;
+    virtual AddressingType getType() const = 0;
     virtual int getPreferedSize() const = 0;
+    virtual int getBytesSize(int operSize) const = 0;
     virtual Encoding getEncoding(int size) const = 0;
+    virtual void setPCRelOffset(int pcRelOffset) {}
     virtual ~Addressing() {}
+    Addressing() = default;
+    Addressing(const Addressing&) = delete;
 };
 
 class ImmedLiteral : public Addressing {
@@ -26,9 +32,10 @@ protected:
 
 public:
     ImmedLiteral(int value) : value(value) {}
-    bool isImmed() const override { return true; }
+    AddressingType getType() const override { return IMMED; }
     int getPreferedSize() const override { return 0; }
-    Encoding getEncoding(int size) const override;
+    int getBytesSize(int operSize) const override { return 1+operSize; }
+		Encoding getEncoding(int size) const override;
 };
 
 class ImmedSymbol : public Addressing {
@@ -39,9 +46,10 @@ protected:
 
 public:
     ImmedSymbol(const string& symbol) : symbol(symbol) {}
-    bool isImmed() const override { return true; }
+    AddressingType getType() const override { return IMMED; }
     int getPreferedSize() const override { return 0; }
-    Encoding getEncoding(int size) const override;
+    int getBytesSize(int operSize) const override { return 1+operSize; }
+		Encoding getEncoding(int size) const override;
 };
 
 class RegisterDirect : public Addressing {
@@ -52,9 +60,10 @@ protected:
 
 public:
     RegisterDirect(Register reg) : reg(reg) {}
-    bool isImmed() const override { return false; }
+    AddressingType getType() const override { return REGDIR; }
     int getPreferedSize() const override { return reg.getSize(); }
-    Encoding getEncoding(int size) const override;
+    int getBytesSize(int operSize) const override { return 1; }
+		Encoding getEncoding(int size) const override;
 };
 
 class RegisterIndirect : public Addressing {
@@ -65,9 +74,10 @@ protected:
 
 public:
     RegisterIndirect(Register reg) : reg(reg) {}
-    bool isImmed() const override { return false; }
+    AddressingType getType() const override { return REGIND; }
     int getPreferedSize() const override { return 0; }
-    Encoding getEncoding(int size) const override;
+    int getBytesSize(int operSize) const override { return 1; }
+		Encoding getEncoding(int size) const override;
 };
 
 class RegisterIndDispLiteral : public Addressing {
@@ -79,9 +89,10 @@ protected:
 
 public:
     RegisterIndDispLiteral(Register reg, int value) : reg(reg), value(value) {}
-    bool isImmed() const override { return false; }
-    int getPreferedSize() const override { return 0; }
-    Encoding getEncoding(int size) const override;
+    AddressingType getType() const override { return REGIND; }
+    int getPreferedSize() const override { return 2; }
+    int getBytesSize(int operSize) const override { return 1+2; }
+		Encoding getEncoding(int size) const override;
 };
 
 class RegisterIndDispSymbol : public Addressing {
@@ -93,22 +104,26 @@ protected:
 
 public:
     RegisterIndDispSymbol(Register reg, const string& symbol) : reg(reg), symbol(symbol) {}
-    bool isImmed() const override { return false; }
-    int getPreferedSize() const override { return 0; }
-    Encoding getEncoding(int size) const override;
+    AddressingType getType() const override { return REGIND; }
+    int getPreferedSize() const override { return 2; }
+    int getBytesSize(int operSize) const override { return 1+2; }
+		Encoding getEncoding(int size) const override;
 };
 
 class PCRelative : public Addressing {
     string symbol;
+    int pcRelOffset;
 
 protected:
     char operandDescr() const override { return (char)((0x3 << 5) + (7 << 1)); }
 
 public:
     PCRelative(const string& symbol) : symbol(symbol) {}
-    bool isImmed() const override { return false; }
+    AddressingType getType() const override { return PCREL; }
     int getPreferedSize() const override { return 0; }
-    Encoding getEncoding(int size) const override;
+    int getBytesSize(int operSize) const override { return 1+2; }
+    void setPCRelOffset(int pcRelOffset) override { this->pcRelOffset = pcRelOffset; }
+		Encoding getEncoding(int size) const override;
 };
 
 class MemDirLiteral : public Addressing {
@@ -119,9 +134,10 @@ protected:
 
 public:
     MemDirLiteral(int value) : value(value) {}
-    bool isImmed() const override { return false; }
+    AddressingType getType() const override { return MEMDIR; }
     int getPreferedSize() const override { return 0; }
-    Encoding getEncoding(int size) const override;
+    int getBytesSize(int operSize) const override { return 1+2; }
+		Encoding getEncoding(int size) const override;
 };
 
 class MemDirSymbol : public Addressing {
@@ -132,8 +148,9 @@ protected:
 
 public:
     MemDirSymbol(const string& symbol) : symbol(symbol) {}
-    bool isImmed() const override { return false; }
+    AddressingType getType() const override { return MEMDIR; }
     int getPreferedSize() const override { return 0; }
-    Encoding getEncoding(int size) const override;
+    int getBytesSize(int operSize) const override { return 1+2; }
+		Encoding getEncoding(int size) const override;
 };
 #endif

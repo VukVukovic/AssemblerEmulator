@@ -199,7 +199,8 @@ expression:
 |	instruction	{
   try {
     drv.getCode().addInstructionDirective($1->getEncoding());
-  } catch(AssemblerException& e) { throw yy::parser::syntax_error(drv.location, e.getProblem()); }
+  } catch(AssemblerException& e) { delete $1; throw yy::parser::syntax_error(drv.location, e.getProblem()); }
+  delete $1;
 };
 
 label:
