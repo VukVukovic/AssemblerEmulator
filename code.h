@@ -5,21 +5,17 @@
 #include <vector>
 #include <string>
 #include "symboltable.h"
+#include "equtable.h"
 
 using namespace std;
 class Encoding;
-
-struct DuplicateSection : public exception {
-    const char* what() const throw() {
-        return "Cannot create duplicate sections!";
-    }
-};
 
 class Code {
     string currentSection;
 
 public:
     SymbolTable symbolTable;
+    EquTable equTable;
     map<string, Encoding> encodedSections;
 
     void beginSection(const string& section); // .section
@@ -30,6 +26,8 @@ public:
     void addLabel(const string& symbol); // label:
 
     void addEqu(const string& equSymbol, int value, const vector<pair<int, string>>& usedSymbols); // .equ
+
+    void resolveSymbols();
 };
 
 #endif

@@ -30,13 +30,15 @@ int main (int argc, char *argv[])
     }
   }
 
+  cout << "START RESOLVING" << endl;
   try {
-    code.symbolTable.resolveSymbols();
+    code.resolveSymbols();
     cout << endl << "---------------------" << endl;
     cout << "SYMBOLS: "<< endl;
     code.symbolTable.printSymbolTable(cout);
+    code.equTable.printEquTable(cout);
   } catch (const AssemblerException& e) {
-    cout << e.what() << " (" << e.getProblem() << ")" << endl;
+    cout << e.getProblem() << endl;
   }
 
   std::cout << "FINISHED" << std::endl;

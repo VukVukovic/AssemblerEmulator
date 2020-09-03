@@ -1,6 +1,7 @@
 #include <iostream>
 #include "instruction.h"
 #include "addressing.h"
+#include "assemblerexception.h"
 
 const map<string, int> Instruction::opCodes = {
     {"halt", 0}, {"iret", 1}, {"ret", 2}, {"int", 3}, {"call", 4},
@@ -19,7 +20,7 @@ Instruction::Instruction(const string& _type) : type(_type) {
         type.pop_back();
     }
 
-    if (type == "push" || type == "pop") 
+    if (type == "push" || type == "pop")
         preferedSize = 2;
 }
 
@@ -29,7 +30,7 @@ void Instruction::addOperand(Addressing* operand) {
 
 bool Instruction::validAdressing() const {
     if (numOfOperands() == 2) {
-        if (type == "cmp" || type == "test") 
+        if (type == "cmp" || type == "test")
             return true;
         if (type == "xchg" && (operands[0]->isImmed() || operands[1]->isImmed()))
             return false;
@@ -43,7 +44,7 @@ bool Instruction::validAdressing() const {
 
 Encoding Instruction::getEncoding() const {
     if (!validAdressing())
-        throw BadAdressing();
+        throw AssemblerException("Adressing used in instruction is not valid");
 
     //cout << "Instruction" << type << endl;
     int size = preferedSize;
@@ -53,20 +54,20 @@ Encoding Instruction::getEncoding() const {
         //cout << "Operand size: " << operandSize << endl;
 
         if (size != operandSize && operandSize != 0) {
-            if (size == 0) 
+            if (size == 0)
                 size = operandSize;
             else
-                throw IncompatibleSizes();
+                throw AssemblerException("Size of instruction or operands sizes are not matched");
         }
     }
-    
-    if (size == 0) 
+
+    if (size == 0)
         size = 2; // 2 BYTES is default if not specified differently
 
     Encoding instructionEncoding({instrutionDescr(size)});
     for (auto operand : operands)
         instructionEncoding.add(operand->getEncoding(size));
-    
+
     return instructionEncoding;
 }
 

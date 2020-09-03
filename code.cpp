@@ -3,12 +3,9 @@
 #include "encoding.h"
 
 void Code::beginSection(const string& section) {
-    if (encodedSections.find(section) != encodedSections.end())
-      throw DuplicateSection{};
-
+    symbolTable.defineSection(section);
     currentSection = section;
     encodedSections[currentSection] = Encoding{};
-    symbolTable.addLabel(currentSection, currentSection, 0);
 }
 
 void Code::addInstructionDirective(const Encoding& encoding) {
@@ -17,6 +14,7 @@ void Code::addInstructionDirective(const Encoding& encoding) {
       symbolTable.addUsage(sl.symbol, sl.size, currentSection, sl.location);
     }
 }
+
 void Code::addExtern(const string& symbol) {
   symbolTable.addExtern(symbol);
 }
@@ -26,9 +24,17 @@ void Code::addGlobal(const string& symbol) {
 }
 
 void Code::addLabel(const string& symbol) {
-  symbolTable.addLabel(symbol, currentSection, encodedSections[currentSection].getBytes().size());
+  symbolTable.defineRelocatableSymbol(symbol, encodedSections[currentSection].getBytes().size(), currentSection);
 }
 
 void Code::addEqu(const string& equSymbol, int value, const vector<pair<int, string>>& usedSymbols) {
-  symbolTable.addEqu(equSymbol, value, usedSymbols);
+  if (usedSymbols.size() == 0)
+    symbolTable.defineAbsoluteSymbol(equSymbol, value);
+  else
+    equTable.addEqu(equSymbol, value, usedSymbols);
+}
+
+void Code::resolveSymbols() {
+  symbolTable.includeExtern();
+  equTable.resolveSymbols(symbolTable);
 }

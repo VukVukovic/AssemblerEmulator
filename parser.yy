@@ -16,6 +16,7 @@
   #include "instruction.h"
   #include "symbolliterallist.h"
   #include "memdirective.h"
+  #include "assemblerexception.h"
 }
 
 // The parsing context.
@@ -99,13 +100,17 @@ preamble:
 indep_directive:
   GLOBAL symbol_list {
     for (std::string symbol : *($2)) {
-      drv.getCode().addGlobal(symbol);
+      try {
+        drv.getCode().addGlobal(symbol);
+      } catch(AssemblerException& e) { throw yy::parser::syntax_error(drv.location, e.getProblem()); }
     }
     delete $2;
   }
 |	EXTERN symbol_list			{
   for (std::string symbol : *($2)) {
-    drv.getCode().addExtern(symbol);
+    try {
+      drv.getCode().addExtern(symbol);
+    } catch(AssemblerException& e) { throw yy::parser::syntax_error(drv.location, e.getProblem()); }
   }
   delete $2;
 }
@@ -121,11 +126,11 @@ indep_directive:
   reverse(symbols.begin(), symbols.end());
   try {
     drv.getCode().addEqu($2, value, symbols);
-  } catch(exception& e) {
+  } catch(AssemblerException& e) {
     for (auto n : *($4))
       delete n.node;
     delete $4;
-    throw yy::parser::syntax_error(drv.location, e.what());
+    throw yy::parser::syntax_error(drv.location, e.getProblem());
   }
 
   for (auto n : *($4))
@@ -177,7 +182,7 @@ section:
   SECTION SYMBOL ":" {
     try {
       drv.getCode().beginSection($2);
-    } catch(exception& e) { throw yy::parser::syntax_error(drv.location, e.what()); }
+    } catch(AssemblerException& e) { throw yy::parser::syntax_error(drv.location, e.getProblem()); }
   } expressions { };
 
 expressions:
@@ -189,12 +194,12 @@ expression:
 |	label 		  {
   try {
     drv.getCode().addLabel($1);
-  } catch(exception& e) { throw yy::parser::syntax_error(drv.location, e.what()); }
+  } catch(AssemblerException& e) { throw yy::parser::syntax_error(drv.location, e.getProblem()); }
 }
 |	instruction	{
   try {
     drv.getCode().addInstructionDirective($1->getEncoding());
-  } catch(exception& e) { throw yy::parser::syntax_error(drv.location, e.what()); }
+  } catch(AssemblerException& e) { throw yy::parser::syntax_error(drv.location, e.getProblem()); }
 };
 
 label:
@@ -202,7 +207,12 @@ label:
 
 directive:
 	indep_directive {}
-| mem_directive { drv.getCode().addInstructionDirective($1->getEncoding()); delete $1; };
+| mem_directive {
+  try {
+    drv.getCode().addInstructionDirective($1->getEncoding());
+    delete $1;
+  } catch(AssemblerException& e) { throw yy::parser::syntax_error(drv.location, e.getProblem()); }
+};
 
 mem_directive:
 	SKIP literal { $$ = new SkipDirective($2); }

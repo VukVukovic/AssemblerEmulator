@@ -9,18 +9,6 @@ using namespace std;
 
 class Addressing;
 
-struct IncompatibleSizes : public exception {
-    const char* what() const throw() {
-        return "Size of instruction or operands sizes are not matched";
-    }
-};
-
-struct BadAdressing : public exception {
-    const char* what() const throw() {
-        return "Adressing used in instruction is not valid";
-    }
-};
-
 class Instruction {
     string type;
     int preferedSize = 0;
