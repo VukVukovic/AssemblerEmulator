@@ -10,9 +10,6 @@ void Code::beginSection(const string& section) {
 
 void Code::addInstructionDirective(const Encoding& encoding) {
     encodedSections[currentSection].add(encoding);
-    for (auto sl : encoding.getSymbolLocations()) {
-      symbolTable.addUsage(sl.symbol, sl.size, currentSection, sl.location);
-    }
 }
 
 void Code::addExtern(const string& symbol) {
@@ -37,4 +34,26 @@ void Code::addEqu(const string& equSymbol, int value, const vector<pair<int, str
 void Code::resolveSymbols() {
   symbolTable.includeExtern();
   equTable.resolveSymbols(symbolTable);
+}
+
+void Code::backpatch() {
+  for (auto& es : encodedSections) {
+    const string& section = es.first;
+
+    for (const auto& bp : es.second.symbolLocations) {
+      if (!symbolTable.isSymbolDefined(bp.symbol))
+        throw AssemblerException("Symbol " + bp.symbol + " is not defined or external to be used");
+
+      Encoding::addBytes(symbolTable.getValue(bp.symbol), bp.size, bp.location, es.second.bytes); // ABS finished
+      if (bp.pcRelOffset > 0) {
+        Encoding::addBytes(-bp.pcRelOffset, bp.size, bp.location, es.second.bytes); // add ofset for pc next instruction
+        // to do; handle different cases
+        cout << "PC_REL relocation for "<< bp.symbol << endl;
+      }
+      else if (symbolTable.getType(bp.symbol) != ABS) {
+        cout << "Using " << bp.symbol << ": REL of size " << 8*bp.size << " for " << symbolTable.getReference(bp.symbol) << endl;
+      }
+    }
+    es.second.symbolLocations.clear();
+  }
 }

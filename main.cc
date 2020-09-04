@@ -23,24 +23,27 @@ int main (int argc, char *argv[])
   // drv.trace_scanning = true;
 
   if (!drv.parse (argv[1])) {
-    for (auto &p : code.encodedSections) {
-      cout << endl << "SECTION: " << p.first << endl;
-      for (auto byte : p.second.getBytes())
-        cout << getHex(byte)  << " ";
+    try {
+      code.resolveSymbols();
+      cout << endl << "---------------------" << endl;
+      cout << "SYMBOLS: "<< endl;
+      code.symbolTable.printSymbolTable(cout);
+      code.equTable.printEquTable(cout);
+      code.backpatch();
+
+      cout << endl << "-------------------------------" << endl;
+      for (auto &p : code.encodedSections) {
+        cout << endl << "SECTION: " << p.first << endl;
+        for (auto byte : p.second.getBytes())
+          cout << getHex(byte)  << " ";
+      }
+    } catch (const AssemblerException& e) {
+      cout << e.getProblem() << endl;
     }
   }
 
-  cout << "START RESOLVING" << endl;
-  try {
-    code.resolveSymbols();
-    cout << endl << "---------------------" << endl;
-    cout << "SYMBOLS: "<< endl;
-    code.symbolTable.printSymbolTable(cout);
-    code.equTable.printEquTable(cout);
-  } catch (const AssemblerException& e) {
-    cout << e.getProblem() << endl;
-  }
 
-  std::cout << "FINISHED" << std::endl;
+
+  std::cout << endl << "FINISHED" << std::endl;
   return 0;
 }

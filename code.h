@@ -18,6 +18,17 @@ public:
     EquTable equTable;
     map<string, Encoding> encodedSections;
 
+/*
+    struct Backpatch {
+        string symbol;
+        string section;
+        int size;
+        int offset;
+        Backpatch(const string& symbol, const string& section, int size, int offset)
+          : symbol(symbol), section(section), size(size), offset(offset) {}
+    };
+    vector<Backpatch> backpatching;
+*/
     void beginSection(const string& section); // .section
     void addInstructionDirective(const Encoding& encoding); // instructions, .byte, .word, .skip
 
@@ -28,6 +39,7 @@ public:
     void addEqu(const string& equSymbol, int value, const vector<pair<int, string>>& usedSymbols); // .equ
 
     void resolveSymbols();
+    void backpatch();
 };
 
 #endif

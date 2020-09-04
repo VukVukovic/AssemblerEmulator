@@ -6,7 +6,7 @@ using namespace std;
 
 void EquTable::resolveSymbols(SymbolTable& symbolTable) {
   for (const auto& equRow : equTable) {
-    if (equTable[equRow.first].canBeResolved(symbolTable)) {
+    if (!isResolved(equRow.first) && equTable[equRow.first].canBeResolved(symbolTable)) {
       equTable[equRow.first].resolve(symbolTable, *this);
     }
   }
@@ -89,10 +89,10 @@ void EquTable::EQUEntry::resolve(SymbolTable& symbolTable, EquTable& equTable) {
     case REL: symbolTable.defineRelocatableSymbol(symbol, value + valueAdd, reference); break;
   }
 
-  cout << "RESOLVED " << symbol << endl;
+  equTable.markResolved(symbol);
   if (equTable.waiting.find(symbol) != equTable.waiting.end()) {
     for (const string& w : equTable.waiting.at(symbol)) {
-      if (equTable.equTable.at(w).canBeResolved(symbolTable))
+      if (!equTable.isResolved(w) && equTable.equTable.at(w).canBeResolved(symbolTable))
         equTable.equTable.at(w).resolve(symbolTable, equTable);
     }
   }

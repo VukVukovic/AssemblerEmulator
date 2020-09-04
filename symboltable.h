@@ -22,16 +22,6 @@ private:
   set<string> globalSymbols;
   set<string> sections;
 
-  struct Backpatch {
-      string symbol;
-      string section;
-      int size;
-      int offset;
-      Backpatch(const string& symbol, const string& section, int size, int offset)
-        : symbol(symbol), section(section), size(size), offset(offset) {}
-  };
-  vector<Backpatch> backpatching;
-
   void checkAlreadyDefined(const string& symbol) const;
 
 public:
@@ -51,7 +41,6 @@ public:
 
   void includeExtern();
 
-  void addUsage(const string& symbol, int size, const string& section, int offset);
   void printSymbolTable(ostream &out);
 
   void resolveSymbols();

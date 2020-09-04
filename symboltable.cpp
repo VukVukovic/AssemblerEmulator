@@ -13,10 +13,6 @@ void SymbolTable::addGlobal(const string& symbol) {
   globalSymbols.insert(symbol);
 }
 
-void SymbolTable::addUsage(const string& symbol, int size, const string& section, int offset) {
-  backpatching.push_back(Backpatch(symbol, section, size, offset));
-}
-
 void SymbolTable::printSymbolTable(ostream &out) {
   string types[3] = {"EXT", "ABS", "REL"};
   for (auto s : symbols) {

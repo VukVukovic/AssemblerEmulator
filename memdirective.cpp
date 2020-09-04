@@ -6,7 +6,7 @@ Encoding SkipDirective::getEncoding() const {
 
 void ByteWordDirective::addLiteral(int value) {
   vector<char> bytes;
-  Encoding::addBytes(value, size, bytes);
+  Encoding::appendBytes(value, size, bytes);
   Encoding newDirective(bytes);
   encoding.add(newDirective);
 }

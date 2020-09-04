@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <set>
 using namespace std;
 
 class SymbolTable;
@@ -24,7 +25,10 @@ class EquTable {
 
   map<string, EQUEntry> equTable;
   map<string, vector<string>> waiting;
+  set<string> finished;
 
+  bool isResolved(const string& symbol) const { return finished.find(symbol) != finished.end(); }
+  void markResolved(const string& symbol) { finished.insert(symbol); }
 public:
   void resolveSymbols(SymbolTable& symbolTable);
   void addEqu(const string& equSymbol, int value, const vector<pair<int, string>>& usedSymbols);
