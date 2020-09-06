@@ -1,6 +1,8 @@
 #include <iostream>
 #include "code.h"
 #include "encoding.h"
+#include "binaryoutfile.h"
+#include "chunkheader.h"
 
 void Code::beginSection(const string& section) {
     symbolTable.defineSection(section);
@@ -34,6 +36,7 @@ void Code::addEqu(const string& equSymbol, int value, const vector<pair<int, str
 void Code::resolveSymbols() {
   symbolTable.includeExtern();
   equTable.resolveSymbols(symbolTable);
+  symbolTable.checkConsistency();
 }
 
 void Code::backpatch() {
@@ -44,16 +47,54 @@ void Code::backpatch() {
       if (!symbolTable.isSymbolDefined(bp.symbol))
         throw AssemblerException("Symbol " + bp.symbol + " is not defined or external to be used");
 
-      Encoding::addBytes(symbolTable.getValue(bp.symbol), bp.size, bp.location, es.second.bytes); // ABS finished
+      Encoding::addBytes(symbolTable.getValue(bp.symbol), bp.size, bp.location, es.second.bytes);
       if (bp.pcRelOffset > 0) {
-        Encoding::addBytes(-bp.pcRelOffset, bp.size, bp.location, es.second.bytes); // add ofset for pc next instruction
-        // to do; handle different cases
-        cout << "PC_REL relocation for "<< bp.symbol << endl;
+        Encoding::addBytes(-bp.pcRelOffset, bp.size, bp.location, es.second.bytes);
+
+        if (symbolTable.getReference(bp.symbol) == section) {
+          Encoding::addBytes(-bp.location, bp.size, bp.location, es.second.bytes);
+        } else {
+          relocations.addRelocation(section, R_PC, bp.symbol, bp.location);
+        }
       }
       else if (symbolTable.getType(bp.symbol) != ABS) {
-        cout << "Using " << bp.symbol << ": REL of size " << 8*bp.size << " for " << symbolTable.getReference(bp.symbol) << endl;
+        RelocationType type = (bp.size == 1) ? R_8 : R_16;
+        relocations.addRelocation(section, type, bp.symbol, bp.location);
       }
     }
-    es.second.symbolLocations.clear();
+  }
+}
+
+void Code::generateObjectFile(const string& path) {
+  BinaryOutFile outFile(path);
+
+  set<string> symbolsToExport = symbolTable.getExportSymbols();
+  outFile.write(ChunkHeader{SYMBOLS, (int)symbolsToExport.size()});
+  for (const string& symb : symbolsToExport) {
+    outFile.write(symb);
+    outFile.write(symbolTable.getType(symb));
+    outFile.write(symbolTable.getValue(symb));
+    outFile.write(symbolTable.getReference(symb));
+  }
+
+  for (auto& es : encodedSections) {
+    const string& section = es.first;
+
+    outFile.write(ChunkHeader{SECTION, (int)es.second.bytes.size()});
+    outFile.write(section);
+    for (char byte : es.second.bytes)
+      outFile.write(byte);
+  }
+
+  for (auto& relo : relocations) {
+    const string& relForSection = relo.first;
+
+    outFile.write(ChunkHeader{RELOCATION, (int)relo.second.size()});
+    outFile.write(relForSection);
+    for (const Relocations::RelEntry& relEntry : relo.second) {
+      outFile.write(relEntry.type);
+      outFile.write(relEntry.symbol);
+      outFile.write(relEntry.offset);
+    }
   }
 }

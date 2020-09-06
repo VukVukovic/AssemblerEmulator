@@ -6,6 +6,7 @@
 #include <string>
 #include "symboltable.h"
 #include "equtable.h"
+#include "relocations.h"
 
 using namespace std;
 class Encoding;
@@ -16,19 +17,9 @@ class Code {
 public:
     SymbolTable symbolTable;
     EquTable equTable;
+    Relocations relocations;
     map<string, Encoding> encodedSections;
 
-/*
-    struct Backpatch {
-        string symbol;
-        string section;
-        int size;
-        int offset;
-        Backpatch(const string& symbol, const string& section, int size, int offset)
-          : symbol(symbol), section(section), size(size), offset(offset) {}
-    };
-    vector<Backpatch> backpatching;
-*/
     void beginSection(const string& section); // .section
     void addInstructionDirective(const Encoding& encoding); // instructions, .byte, .word, .skip
 
@@ -40,6 +31,8 @@ public:
 
     void resolveSymbols();
     void backpatch();
+
+    void generateObjectFile(const string& path);
 };
 
 #endif

@@ -37,6 +37,8 @@ int main (int argc, char *argv[])
         for (auto byte : p.second.getBytes())
           cout << getHex(byte)  << " ";
       }
+
+      code.generateObjectFile("file.o");
     } catch (const AssemblerException& e) {
       cout << e.getProblem() << endl;
     }

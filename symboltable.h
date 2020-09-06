@@ -11,12 +11,14 @@ using namespace std;
 enum SymbolType { EXT, ABS, REL };
 
 class SymbolTable {
-private:
+public:
   struct STEntry {
     int value = 0;
     string reference;
     SymbolType type;
   };
+
+private:
   map<string, STEntry> symbols;
   set<string> externSymbols;
   set<string> globalSymbols;
@@ -43,7 +45,11 @@ public:
 
   void printSymbolTable(ostream &out);
 
-  void resolveSymbols();
+  void checkConsistency() const;
+
+  set<string> getExportSymbols() const;
+  //map<string, STEntry>::const_iterator begin() const { return symbols.begin(); }
+  //map<string, STEntry>::const_iterator end() const { return symbols.end(); }
 };
 
 #endif

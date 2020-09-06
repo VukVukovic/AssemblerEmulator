@@ -57,3 +57,16 @@ void SymbolTable::checkAlreadyDefined(const string& symbol) const {
   if (isSymbolDefined(symbol))
     throw AssemblerException(symbol + " already defined");
 }
+
+void SymbolTable::checkConsistency() const {
+  for (const string& symbol : globalSymbols) {
+    if (symbols.at(symbol).type == EXT)
+      throw AssemblerException("Symbol " + symbol + " cannot be marked as global since it's extern");
+  }
+}
+
+set<string> SymbolTable::getExportSymbols() const {
+  set<string> symbolsToExport(sections);
+  symbolsToExport.insert(globalSymbols.begin(), globalSymbols.end());
+  return symbolsToExport;
+}
