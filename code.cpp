@@ -54,12 +54,12 @@ void Code::backpatch() {
         if (symbolTable.getReference(bp.symbol) == section) {
           Encoding::addBytes(-bp.location, bp.size, bp.location, es.second.bytes);
         } else {
-          relocations.addRelocation(section, R_PC, bp.symbol, bp.location);
+          relocations.addRelocation(section, R_PC, symbolTable.getReference(bp.symbol), bp.location);
         }
       }
       else if (symbolTable.getType(bp.symbol) != ABS) {
         RelocationType type = (bp.size == 1) ? R_8 : R_16;
-        relocations.addRelocation(section, type, bp.symbol, bp.location);
+        relocations.addRelocation(section, type, symbolTable.getReference(bp.symbol), bp.location);
       }
     }
   }
