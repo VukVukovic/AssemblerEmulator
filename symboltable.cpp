@@ -24,23 +24,23 @@ void SymbolTable::printSymbolTable(ostream &out) {
 void SymbolTable::includeExtern() {
   for (const string& externSymbol : externSymbols) {
     checkAlreadyDefined(externSymbol);
-    symbols[externSymbol] = {0, externSymbol, EXT};
+    symbols[externSymbol] = SymbolEntry(externSymbol, 0, externSymbol, EXT);
   }
 }
 
 void SymbolTable::defineAbsoluteSymbol(const string& symbol, int value) {
   checkAlreadyDefined(symbol);
-  symbols[symbol] = {value, "", ABS};
+  symbols[symbol] = SymbolEntry(symbol, value, "", ABS);
 }
 
 void SymbolTable::defineRelocatableSymbol(const string& symbol, int value, const string& section) {
   checkAlreadyDefined(symbol);
-  symbols[symbol] = {value, section, REL};
+  symbols[symbol] = SymbolEntry(symbol, value, section, REL);
 }
 
 void SymbolTable::defineExternSymbol(const string& symbol, int value, const string& externSymbol) {
   checkAlreadyDefined(symbol);
-  symbols[symbol] = {value, externSymbol, EXT};
+  symbols[symbol] = SymbolEntry(symbol, value, externSymbol, EXT);
 }
 
 void SymbolTable::defineSection(const string& section) {
@@ -60,13 +60,13 @@ void SymbolTable::checkAlreadyDefined(const string& symbol) const {
 
 void SymbolTable::checkConsistency() const {
   for (const string& symbol : globalSymbols) {
-    if (symbols.at(symbol).type == EXT)
+    if (externSymbols.find(symbol) != externSymbols.end())
       throw AssemblerException("Symbol " + symbol + " cannot be marked as global since it's extern");
+    if (sections.find(symbol) != sections.end())
+      throw AssemblerException("Sections cannot be marked as global (" + symbol + ")");
   }
 }
 
 set<string> SymbolTable::getExportSymbols() const {
-  set<string> symbolsToExport(sections);
-  symbolsToExport.insert(globalSymbols.begin(), globalSymbols.end());
-  return symbolsToExport;
+  return globalSymbols;
 }

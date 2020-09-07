@@ -2,6 +2,7 @@
 #define BINARYINFILE_H
 
 #include <fstream>
+#include "../commontypes.h"
 using namespace std;
 
 class BinaryInFile {
@@ -24,6 +25,16 @@ public:
     string result(size, ' ');
     infile.read(&result[0], size);
     return result;
+  }
+
+  template <>
+  SymbolEntry read<SymbolEntry>() {
+    return SymbolEntry(read<string>(), read<int>(), read<string>(), read<SymbolType>());
+  }
+
+  template <>
+  RelEntry read<RelEntry>() {
+    return RelEntry(read<RelocationType>(), read<string>(), read<int>());
   }
 
   bool eof() { return infile.eof(); }

@@ -6,10 +6,10 @@
 #include <string>
 #include "symboltable.h"
 #include "equtable.h"
+#include "encoding.h"
 #include "relocations.h"
 
 using namespace std;
-class Encoding;
 
 class Code {
     string currentSection;

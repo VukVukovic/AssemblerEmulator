@@ -4,20 +4,11 @@
 #include <string>
 #include <map>
 #include <vector>
+#include "commontypes.h"
+
 using namespace std;
 
-enum RelocationType { R_8, R_16, R_PC};
-
 class Relocations {
-public:
-  struct RelEntry {
-    RelocationType type;
-    string symbol;
-    int offset;
-    RelEntry() = default;
-    RelEntry(RelocationType type, const string& symbol, int offset) : type(type), symbol(symbol), offset(offset) {}
-  };
-private:
   map<string, vector<RelEntry>> relocations;
 
 public:

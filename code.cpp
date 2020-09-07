@@ -2,7 +2,6 @@
 #include "code.h"
 #include "encoding.h"
 #include "binaryoutfile.h"
-#include "chunkheader.h"
 
 void Code::beginSection(const string& section) {
     symbolTable.defineSection(section);
@@ -70,12 +69,8 @@ void Code::generateObjectFile(const string& path) {
 
   set<string> symbolsToExport = symbolTable.getExportSymbols();
   outFile.write(ChunkHeader{SYMBOLS, (int)symbolsToExport.size()});
-  for (const string& symb : symbolsToExport) {
-    outFile.write(symb);
-    outFile.write(symbolTable.getType(symb));
-    outFile.write(symbolTable.getValue(symb));
-    outFile.write(symbolTable.getReference(symb));
-  }
+  for (const string& symbol : symbolsToExport)
+    outFile.write(symbolTable.getEntry(symbol));
 
   for (auto& es : encodedSections) {
     const string& section = es.first;
@@ -91,10 +86,7 @@ void Code::generateObjectFile(const string& path) {
 
     outFile.write(ChunkHeader{RELOCATION, (int)relo.second.size()});
     outFile.write(relForSection);
-    for (const Relocations::RelEntry& relEntry : relo.second) {
-      outFile.write(relEntry.type);
-      outFile.write(relEntry.symbol);
-      outFile.write(relEntry.offset);
-    }
+    for (const RelEntry& relEntry : relo.second)
+      outFile.write(relEntry);
   }
 }
