@@ -7,18 +7,15 @@ void Memory::load(int startLocation, const vector<char>& bytes) {
   copy(bytes.begin(), bytes.end(), memory.begin()+startLocation);
 }
 
-int8_t Memory::readByte(int location) {
-  return memory[location];
-}
-
-int16_t Memory::readWord(int location) {
+int16_t Memory::read(int location, int size) {
+  if (size == 1)
+    return memory[location];
   return (memory[location+1] << 8) | memory[location];
 }
 
-void Memory::writeByte(int location, int8_t value) {
-  memory[location] = value;
-}
-
-void Memory::writeWord(int location, int16_t value) {
-  *(&memory[location]) = value;
+void Memory::write(int location, int16_t value, int size) {
+  if (size == 1)
+    memory[location] = value;
+  else
+    *(&memory[location]) = value;
 }

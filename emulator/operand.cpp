@@ -10,17 +10,11 @@ int16_t RegisterDirect::read() const {
 
 int16_t RegisterIndirect::read() const {
   uint16_t location = (uint16_t)registers[reg] + displacement;
-  int16_t value;
-  if (size == 1) value = memory.readByte(location);
-  else value = memory.readWord(location);
-  return value;
+  return memory.read(location, size);
 }
 
 int16_t MemLocation::read() const {
-  int16_t value;
-  if (size == 1) value = memory.readByte(location);
-  else value = memory.readWord(location);
-  return value;
+  return memory.read(location, size);
 }
 
 int16_t Immed::read() const {
@@ -28,20 +22,18 @@ int16_t Immed::read() const {
 }
 
 void RegisterDirect::write(int16_t value) {
-  if (size == 2) registers[reg] = (uint16_t)value;
+  if (size == 2) registers[reg] = value;
   else if (high) { registers[reg] &= 0x00FF; registers[reg] |= ((uint16_t)value) << 8; }
   else { registers[reg] &= 0xFF00; registers[reg] |= ((uint16_t)value)&0xFF; }
 }
 
 void RegisterIndirect::write(int16_t value) {
   uint16_t location = (uint16_t)registers[reg] + displacement;
-  if (size == 1) memory.writeByte(location, value);
-  else memory.writeWord(location, value);
+  memory.write(location, value, size);
 }
 
 void MemLocation::write(int16_t value) {
-  if (size == 1) memory.writeByte(location, value);
-  else memory.writeWord(location, value);
+  memory.write(location, value, size);
 }
 
 bool Immed::isValid(OpCodes operation, bool isDst) const {

@@ -6,6 +6,9 @@
 #include <string>
 #include <map>
 
+#define WORD 2
+#define BYTE 1
+
 const uint16_t CPU::MASKS[] = {0x0001, 0x0002, 0x0004, 0x0008, 0x8000};
 const vector<int> CPU::operandNum = {0, 0, 0, 1, 1,
                                       1, 1, 1, 1, 1,
@@ -20,7 +23,7 @@ string toInstr[] = {"HALT", "IRET", "RET", "INT", "CALL",
                     "OR", "XOR", "TEST", "SHL", "SHR"};
 
 void CPU::readInstruction() {
-  unsigned char byte = memory.readByte(pc);
+  unsigned char byte = memory.read(pc, BYTE);
   pc++;
 
   current.size = (byte >> 2)&1 + 1;
@@ -33,7 +36,7 @@ void CPU::readInstruction() {
   cout << toInstr[current.opCode] << " ";
 
   for (int i = 0; i < operandNum[current.opCode]; i++) {
-    byte = memory.readByte(pc);
+    byte = memory.read(pc, BYTE);
     pc++;
 
     if ((byte >> 5) >= ADDR_NUM)
@@ -42,9 +45,7 @@ void CPU::readInstruction() {
     AddressType type = (AddressType)(byte >> 5);
     switch (type) {
       case IMMED: {
-        int16_t value;
-        if (current.size==1) value = memory.readByte(pc);
-        else value = memory.readWord(pc);
+        int16_t value = memory.read(pc, current.size);
         pc += current.size;
         current.operands.push_back(new Immed(current.size, value));
         cout << "IMMED "; }
@@ -73,14 +74,14 @@ void CPU::readInstruction() {
         if (reg == 0xF) reg = PSW;
         if (reg >= REG_NUM)
           throw InvalidInstruction{};
-        int16_t displacement = memory.readWord(pc);
+        int16_t displacement = memory.read(pc, WORD);
         pc += 2;
         current.operands.push_back(new RegisterIndirect(current.size, reg, displacement, registers, memory));
         cout << "REGINDDISP ";
       }
       break;
       case MEM: {
-        int16_t location = memory.readWord(pc);
+        int16_t location = memory.read(pc, WORD);
         pc += 2;
         current.operands.push_back(new MemLocation(current.size, location, memory));
         cout << "MEM ";
@@ -94,7 +95,7 @@ void CPU::readInstruction() {
 
   bool valid = true;
   for (int i = 0; i < current.operands.size(); i++)
-    valid &= current.operands[i]->isValid(current.opCode, i);
+    valid &= current.operands[i]->isValid(current.opCode, current.operands.size()==2 && i==2);
 
   if (!valid)
     throw InvalidInstruction{};
@@ -131,11 +132,11 @@ void CPU::executeInstruction() {
 
 void CPU::stackPush(int16_t value) {
   sp -= 2;
-  memory.writeWord(sp, value);
+  memory.write(sp, value, WORD);
 }
 
 int16_t CPU::stackPop() {
-  int16_t ret = memory.readWord(sp);
+  int16_t ret = memory.read(sp, WORD);
   sp += 2;
   return ret;
 }
@@ -250,6 +251,6 @@ void CPU::interruptMark(int i) {
 void CPU::goToInterrupt(int i) {
   stackPush(pc);
   stackPush(psw);
-  pc = memory.readWord(i);
+  pc = memory.read(i, WORD);
   setPswBit(I, false);
 }

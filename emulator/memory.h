@@ -13,10 +13,8 @@ public:
 
   void load(int startLocation, const vector<char>& bytes);
 
-  int8_t readByte(int location);
-  int16_t readWord(int location);
-  void writeByte(int location, int8_t value);
-  void writeWord(int location, int16_t value);
+  int16_t read(int location, int size);
+  void write(int location, int16_t value, int size);
 };
 
 #endif
