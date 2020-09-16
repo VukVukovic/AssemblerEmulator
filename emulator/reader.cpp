@@ -25,6 +25,8 @@ void Reader::read(const vector<string>& files) {
   cout << "---------------------" << endl << "SYMBOLS" << endl;
   for (const auto& se : symbols) {
     cout << se.second.symbol << '\t' << se.second.value << '\t' << se.second.reference << '\t' << types[se.second.type] << endl;
+    if (sections.find(se.first) != sections.end())
+      throw EmulatorException("Duplicate symbol " + se.first + " as section");
   }
 
   cout << "---------------------" << endl << "RELOCATIONS";
@@ -77,6 +79,9 @@ void Reader::readFile(BinaryInFile& file) {
       throw EmulatorException("Duplicate symbol " + se.symbol);
 
     symbols[se.symbol] = se;
+
+    if (se.type == EXT) // ABS and REL symbols are leaf nodes
+      waiting[se.reference].push_back(se.symbol);
   }
 
   for (const auto& section : fileSections)
@@ -157,8 +162,10 @@ void Reader::resolveRelocations(const map<string, int>& startingAddress) {
 
       if (sections.find(relo.symbol) != sections.end()) {
         Encoding::addBytes(startingAddress.at(relo.symbol), relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
-      } else if (symbols.find(relo.symbol) != symbols.end()) { // handle extern symbols
-        // to do finish
+      } else if (symbols.find(relo.symbol) != symbols.end()) {
+        Encoding::addBytes(symbols[relo.symbol].value, relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
+        if (symbols[relo.symbol].type == REL)
+          Encoding::addBytes(startingAddress.at(symbols[relo.symbol].reference), relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
       } else {
         error = true;
         if (notResolved.length()>0)
@@ -172,7 +179,7 @@ void Reader::resolveRelocations(const map<string, int>& startingAddress) {
     throw EmulatorException("Following symbols could not have been resolved: " + notResolved);
 }
 
-void Reader::load(const map<string, int>& places) {
+void Reader::load(Memory& memory, const map<string, int>& places) {
   int startingAddressFree = checkLoadingPlaces(places);
 
   map<string, int> startingAddress(places);
@@ -196,5 +203,49 @@ void Reader::load(const map<string, int>& places) {
   resolveRelocations(startingAddress);
 
   for (const auto& sa : startingAddress)
-    Memory::getInstance().load(sa.second, sections[sa.first]);
+    memory.load(sa.second, sections[sa.first]);
+}
+
+void Reader::resolveSymbols() {
+  for (const auto& symbol : symbols) {
+    if (!isResolved(symbol.first) && canResolve(symbol.first))
+      resolveSymbol(symbol.first);
+  }
+
+  bool error = false;
+  string notResolved;
+  for (const auto& symbol : symbols) {
+    if (!isResolved(symbol.first)) {
+      error = true;
+      if (notResolved.length()>0)
+        notResolved += ", ";
+      notResolved += symbol.first;
+    }
+  }
+
+  if (error)
+    throw EmulatorException("Symbols cannot be resolved: " + notResolved);
+}
+
+bool Reader::canResolve(const string& symbol) {
+  const string& reference = symbols[symbol].reference;
+  return isResolved(reference);
+}
+
+bool Reader::isResolved(const string& symbol) {
+  return symbols.at(symbol).type != EXT;
+}
+
+void Reader::resolveSymbol(const string& symbol) {
+  const string& reference = symbols[symbol].reference;
+  symbols[symbol].value += symbols[reference].value;
+  symbols[symbol].reference = reference;
+  symbols[symbol].type = symbols[reference].type;
+
+  if (waiting.find(symbol) != waiting.end()) {
+    for (const string& w : waiting[symbol]) {
+      if (!isResolved(w) && canResolve(w))
+        resolveSymbol(w);
+    }
+  }
 }

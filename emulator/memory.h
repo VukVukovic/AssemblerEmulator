@@ -1,25 +1,22 @@
 #ifndef MEMORY_H
 #define MEMORY_H
-#define MEM_SIZE 1<<16
-
+#include <cstdint>
 #include <vector>
+#include "typesconstants.h"
 using namespace std;
 
 class Memory {
-public:
-  static Memory& getInstance() {
-    static Memory instance;
-    return instance;
-  }
-  Memory(Memory const&) = delete;
-  void operator=(Memory const&)  = delete;
-
-private:
-  Memory() : memory(MEM_SIZE, 0) {}
   vector<char> memory;
 
 public:
+  Memory() : memory(MEM_SIZE, 0) {}
+
   void load(int startLocation, const vector<char>& bytes);
+
+  int8_t readByte(int location);
+  int16_t readWord(int location);
+  void writeByte(int location, int8_t value);
+  void writeWord(int location, int16_t value);
 };
 
 #endif

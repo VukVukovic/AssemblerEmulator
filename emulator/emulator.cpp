@@ -1,6 +1,8 @@
 #include <iostream>
 #include "reader.h"
 #include "emulatorexception.h"
+#include "memory.h"
+#include "cpu.h"
 
 using namespace std;
 
@@ -13,12 +15,21 @@ int main() {
   map<string, int> places;
   places["text"] = 200;
 
+  Memory memory;
+  CPU cpu(memory);
+  //Terminal terminal(cpu);
+
   try {
     reader.read(files);
-    reader.load(places);
+    reader.resolveSymbols();
+    reader.load(memory, places);
+    //terminal.start();
+    cpu.start();
   } catch(const EmulatorException& e) {
     cout << e.getProblem() << endl;
   }
+
+  //terminal.stop();
 
   return 0;
 }
