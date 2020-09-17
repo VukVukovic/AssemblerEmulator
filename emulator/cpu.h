@@ -4,8 +4,10 @@
 #include <vector>
 #include <mutex>
 #include "typesconstants.h"
+#include <chrono>
 
 using namespace std;
+using namespace std::chrono;
 
 class Memory;
 class Operand;
@@ -41,6 +43,7 @@ class CPU {
   };
 
   ALUUnit ALU;
+
   vector<bool> interrupts;
   mutex interruptsMutex;
 
@@ -63,6 +66,14 @@ class CPU {
   void updatePSW();
 
   void runALU();
+
+  struct Timer {
+    milliseconds previousTime;
+    milliseconds duration;
+    bool sleeping = false;
+  };
+  Timer timer;
+  void timerTick();
 
 public:
   CPU(Memory& memory) : memory(memory), registers(REG_NUM, 0) {};

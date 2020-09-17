@@ -12,4 +12,7 @@ enum OpCodes {HALT, IRET, RET, INT, CALL,
 enum AddressType {IMMED, REGDIR, REGIND, REGINDDISP, MEM, ADDR_NUM};
 
 static const int MEM_SIZE = 1<<16;
+static const uint16_t DATA_IN = 0xFF00;
+static const uint16_t DATA_OUT = 0xFF02;
+static const uint16_t TIMER_CFG = 0xFF10;
 #endif

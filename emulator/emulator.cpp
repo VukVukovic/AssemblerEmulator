@@ -3,6 +3,7 @@
 #include "emulatorexception.h"
 #include "memory.h"
 #include "cpu.h"
+#include "terminal.h"
 
 using namespace std;
 
@@ -17,19 +18,20 @@ int main() {
 
   Memory memory;
   CPU cpu(memory);
-  //Terminal terminal(cpu);
+  Terminal::getInstance().setCPU(&cpu);
+  Terminal::getInstance().setMemory(&memory);
 
   try {
     reader.read(files);
     reader.resolveSymbols();
     reader.load(memory, places);
-    //terminal.start();
+    Terminal::getInstance().start();
     cpu.start();
   } catch(const EmulatorException& e) {
     cout << e.getProblem() << endl;
   }
 
-  //terminal.stop();
+  Terminal::getInstance().stop();
 
   return 0;
 }

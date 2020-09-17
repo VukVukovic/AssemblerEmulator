@@ -106,7 +106,7 @@ void CPU::executeInstruction() {
     case HALT: running = false; break;
     case IRET: psw = stackPop(); pc = stackPop(); break;
     case RET: pc = stackPop(); break;
-    case INT: goToInterrupt((current.operands.front()->read()%8)*2); break;
+    case INT: goToInterrupt(current.operands.front()->read()%8); break;
     case CALL: stackPush(pc); pc = current.operands.front()->read(); break;
     case JMP: pc = current.operands.front()->read(); break;
     case JEQ: if (equal()) pc = current.operands.front()->read(); break;
@@ -154,7 +154,7 @@ void CPU::start() {
       clearCurrentOperands();
     } catch (const InvalidInstruction& e) {
       pc = pc_before;
-      // mark interrupt
+      goToInterrupt(1);
       clearCurrentOperands();
     }
   }
@@ -251,6 +251,35 @@ void CPU::interruptMark(int i) {
 void CPU::goToInterrupt(int i) {
   stackPush(pc);
   stackPush(psw);
-  pc = memory.read(i, WORD);
+  pc = memory.read(2*i, WORD);
   setPswBit(I, false);
+}
+
+void CPU::timerTick() {
+  milliseconds current = duration_cast<milliseconds>(
+    system_clock::now().time_since_epoch()
+  );
+
+  if (timer.sleeping && current - timer.previousTime >= timer.duration) {
+    timer.sleeping = false;
+    interruptMark(2);
+  }
+
+  if (!timer.sleeping) {
+    int8_t timerCfg = (memory.read(TIMER_CFG, 2) & 0x7);
+    switch (timerCfg) {
+      case 0x0: timer.duration = milliseconds(500); break;
+      case 0x1: timer.duration = milliseconds(1000); break;
+      case 0x2: timer.duration = milliseconds(1500); break;
+      case 0x3: timer.duration = milliseconds(2000); break;
+      case 0x4: timer.duration = milliseconds(5000); break;
+      case 0x5: timer.duration = milliseconds(10000); break;
+      case 0x6: timer.duration = milliseconds(30000); break;
+      case 0x7: timer.duration = milliseconds(60000); break;
+      default: break;
+    }
+    timer.sleeping = true;
+  }
+
+  timer.previousTime = current;
 }

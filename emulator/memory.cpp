@@ -1,9 +1,8 @@
 #include "memory.h"
 #include <iostream>
-//#include <string.h>
+#include "terminal.h"
 
 void Memory::load(int startLocation, const vector<char>& bytes) {
-  //memcpy(&memory[startLocation], &bytes[0], bytes.size() * sizeof(char));
   copy(bytes.begin(), bytes.end(), memory.begin()+startLocation);
 }
 
@@ -18,4 +17,7 @@ void Memory::write(int location, int16_t value, int size) {
     memory[location] = value;
   else
     *(&memory[location]) = value;
+
+  if (location == DATA_OUT)
+    Terminal::getInstance().newData();
 }
