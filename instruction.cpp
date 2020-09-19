@@ -11,16 +11,21 @@ const map<string, int> Instruction::opCodes = {
     {"or", 20}, {"xor", 21}, {"test", 22}, {"shl", 23}, {"shr", 24}
 };
 
+const set<string> Instruction::wordInstructions =
+    {"call", "jmp", "jeq", "jne", "jgt", "push", "pop"};
+
 Instruction::Instruction(const string& _type) : type(_type) {
-    if (type.back() == 'b') {
-        preferedSize = 1;
-        type.pop_back();
-    } else if (type.back() == 'w') {
-        preferedSize = 2;
-        type.pop_back();
+    if (opCodes.find(type) == opCodes.end()) {
+      if (type.back() == 'b') {
+          preferedSize = 1;
+          type.pop_back();
+      } else if (type.back() == 'w') {
+          preferedSize = 2;
+          type.pop_back();
+      }
     }
 
-    if (type == "push" || type == "pop")
+    if (wordInstructions.find(type) != wordInstructions.end())
         preferedSize = 2;
 }
 
@@ -54,7 +59,7 @@ Encoding Instruction::getEncoding() const {
             if (size == 0)
                 size = operandSize;
             else
-                throw AssemblerException("Size of instruction or operands sizes are not matched");
+              throw AssemblerException("Size of instruction or operands sizes are not matched");
         }
     }
 

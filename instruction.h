@@ -2,6 +2,7 @@
 #define INSTRUCTION_H
 
 #include <map>
+#include <set>
 #include <vector>
 #include <string>
 #include "encoding.h"
@@ -18,6 +19,7 @@ class Instruction {
 
 protected:
     static const map<string, int> opCodes;
+    static const set<string> wordInstructions;
 
 public:
     Instruction(const string& type);

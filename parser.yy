@@ -60,6 +60,7 @@
 %token <std::string> SYMBOL
 %token <int> INTEGER
 %token <int> CHAR
+%token <int> HEX
 
 // string za sada
 %token <std::string> INSTR_ARITH
@@ -154,7 +155,8 @@ literal:
 
 literal_no_sign:
   INTEGER { $$ = $1; }
-| CHAR { $$ = $1; };
+| CHAR { $$ = $1; }
+| HEX { $$ = $1; };
 
 literal_sign:
   "+" literal_no_sign { $$ = $2; }

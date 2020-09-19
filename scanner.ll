@@ -13,6 +13,7 @@
 %{
   yy::parser::symbol_type make_INTEGER (const std::string &s, const yy::parser::location_type& loc);
   yy::parser::symbol_type make_CHAR (const std::string &s, const yy::parser::location_type& loc);
+  yy::parser::symbol_type make_HEX (const std::string &s, const yy::parser::location_type& loc);
 %}
 
 blank [ \t\r]
@@ -24,7 +25,8 @@ instr_1 (push|pop|int)
 instr_arith (xchg|mov|add|sub|mul|div|cmp|not|and|or|xor|test|shl|shr)(b|w)?
 
 integer (([1-9][0-9]*)|0)
-character '[\x00-\x7F]'
+character \'([\x00-\x7F]|\\n|\\t)\'
+hex 0[xX][0-9a-fA-F]+
 
 register (r[0-7]|sp|psw)
 register_lh (r[0-7]|sp|psw)(l|h)
@@ -62,6 +64,7 @@ register_pc pc
 ".word"     return yy::parser::make_WORD(loc);
 {integer}   return make_INTEGER(yytext, loc);
 {character} return make_CHAR(yytext, loc);
+{hex}       return make_HEX(yytext, loc);
 {register_lh}  return yy::parser::make_REGISTER_LH(yytext, loc);
 {register}  return yy::parser::make_REGISTER(yytext, loc);
 "pc"        return yy::parser::make_PC_REGISTER(loc);
@@ -88,8 +91,17 @@ yy::parser::symbol_type make_INTEGER (const std::string &s, const yy::parser::lo
 
 yy::parser::symbol_type make_CHAR (const std::string &s, const yy::parser::location_type& loc)
 {
-  char c = s[1];
+  std::string rawChar = s;
+  rawChar = rawChar.substr(1, rawChar.size() - 2); // remove first and last
+  char c = rawChar[0];
+  if (rawChar == "\\n") c = '\n';
+  if (rawChar == "\\t") c = '\t';
   return yy::parser::make_CHAR((int)c, loc);
+}
+
+yy::parser::symbol_type make_HEX (const std::string &s, const yy::parser::location_type& loc)
+{
+  return yy::parser::make_HEX(std::stoi(s, nullptr, 16), loc);
 }
 
 void driver::scan_begin ()
