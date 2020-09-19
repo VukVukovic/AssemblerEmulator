@@ -49,53 +49,26 @@ void Reader::readFile(BinaryInFile& file) {
   vector<pair<string, vector<char>>> fileSections;
   vector<pair<string, vector<RelEntry>>> fileRelocations;
 
-  while (!file.eof()) {
-    ChunkHeader header = file.read<ChunkHeader>();
+  try {
+    while (!file.eof()) {
+      ChunkHeader header = file.read<ChunkHeader>();
 
-    if (header.type == SYMBOLS) {
-      fileSymbols = readSymbols(file, header.size);
-    }
-    else if (header.type == SECTION) {
-      string section = file.read<string>();
-      fileSections.push_back({section, readSection(file, header.size)});
-    } else if (header.type == RELOCATION) {
-      string section = file.read<string>();
-      fileRelocations.push_back({section, readRelocation(file, header.size)});
-    }
-  }
-
-  map<string, int> offsets;
-
-  for (const auto& section : fileSections)
-    offsets[section.first] = sections[section.first].size();
-
-  for (auto& se : fileSymbols) {
-    if (se.type == REL && offsets.find(se.reference) != offsets.end()) {
-      se.value += offsets[se.reference];
-    }
-
-    if (symbols.find(se.symbol) != symbols.end())
-      throw EmulatorException("Duplicate symbol " + se.symbol);
-
-    symbols[se.symbol] = se;
-
-    if (se.type == EXT) // ABS and REL symbols are leaf nodes
-      waiting[se.reference].push_back(se.symbol);
-  }
-
-  for (const auto& section : fileSections)
-    sections[section.first].insert(sections[section.first].end(), section.second.begin(), section.second.end());
-
-  for (auto& fr : fileRelocations) {
-    const string& reloForSection = fr.first;
-    for (auto& relo : fr.second) {
-      if (sections.find(relo.symbol) != sections.end() && offsets.find(relo.symbol) != offsets.end()) {
-        relo.offset += offsets[relo.symbol];
-        addBytes(offsets[relo.symbol], relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
+      if (header.type == SYMBOLS) {
+        fileSymbols = readSymbols(file, header.size);
       }
-      relocations[reloForSection].push_back(relo);
+      else if (header.type == SECTION) {
+        string section = file.read<string>();
+        fileSections.push_back({section, readSection(file, header.size)});
+      } else if (header.type == RELOCATION) {
+        string section = file.read<string>();
+        fileRelocations.push_back({section, readRelocation(file, header.size)});
+      }
     }
+  } catch (exception &e) {
+    throw EmulatorException("Error while reading file " + file.getName() + ": " + e.what());
   }
+
+  aggregateAndRelocate(fileSymbols, fileSections, fileRelocations);
 }
 
 vector<char> Reader::readSection(BinaryInFile& file, int size) {
@@ -119,6 +92,48 @@ vector<SymbolEntry> Reader::readSymbols(BinaryInFile& file, int symbolNum) {
   return symbols;
 }
 
+void Reader::aggregateAndRelocate(vector<SymbolEntry>& fileSymbols, vector<pair<string, vector<char>>>& fileSections,
+   vector<pair<string, vector<RelEntry>>>& fileRelocations) {
+
+   map<string, int> offsets;
+
+   // Get offsets of current aggregate sections
+   for (const auto& section : fileSections)
+     offsets[section.first] = sections[section.first].size();
+
+   for (auto& se : fileSymbols) {
+     // update symbol values that are dependant of sections
+     if (se.type == REL && offsets.find(se.reference) != offsets.end()) {
+       se.value += offsets[se.reference];
+     }
+
+     if (symbols.find(se.symbol) != symbols.end())
+       throw EmulatorException("Duplicate symbol " + se.symbol);
+
+     if (se.type == EXT)
+          throw EmulatorException("EXT symbol found in exported symbols " + se.symbol);
+
+     symbols[se.symbol] = se;
+   }
+
+   // add section bytes to the end of aggregate sections
+   for (const auto& section : fileSections)
+     sections[section.first].insert(sections[section.first].end(), section.second.begin(), section.second.end());
+
+
+   for (auto& fr : fileRelocations) {
+     const string& reloForSection = fr.first;
+     for (auto& relo : fr.second) {
+       if (offsets.find(relo.symbol) != offsets.end()) {
+         // change offset in bytes for symbol that references section
+         relo.offset += offsets[relo.symbol];
+         addBytes(offsets[relo.symbol], relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
+       }
+       relocations[reloForSection].push_back(relo);
+     }
+   }
+}
+
 int Reader::checkLoadingPlaces(const map<string, int>& places) {
   vector<pair<int, int>> taken;
   //taken.push_back({0xFF00, 256}); // no check for memory mapped registers
@@ -130,6 +145,7 @@ int Reader::checkLoadingPlaces(const map<string, int>& places) {
     int start = place.second;
     int sectionSize = sections[place.first].size();
 
+    cout << place.first << " " << start << " " << sectionSize;
     if (start < 0 || start + sectionSize > MEM_SIZE)
       throw EmulatorException("Place for " + place.first + " is invalid (memory overflow)");
 
@@ -191,7 +207,6 @@ void Reader::load(Memory& memory, const map<string, int>& places) {
     int size = section.second.size();
 
     if (start + size > MEM_SIZE) {
-      cout << "ERROR "<< start << " " << size;
       throw EmulatorException("Cannot load all sections into memory");
     }
 
@@ -203,50 +218,6 @@ void Reader::load(Memory& memory, const map<string, int>& places) {
 
   for (const auto& sa : startingAddress)
     memory.load(sa.second, sections[sa.first]);
-}
-
-void Reader::resolveSymbols() {
-  for (const auto& symbol : symbols) {
-    if (!isResolved(symbol.first) && canResolve(symbol.first))
-      resolveSymbol(symbol.first);
-  }
-
-  bool error = false;
-  string notResolved;
-  for (const auto& symbol : symbols) {
-    if (!isResolved(symbol.first)) {
-      error = true;
-      if (notResolved.length()>0)
-        notResolved += ", ";
-      notResolved += symbol.first;
-    }
-  }
-
-  if (error)
-    throw EmulatorException("Symbols cannot be resolved: " + notResolved);
-}
-
-bool Reader::canResolve(const string& symbol) {
-  const string& reference = symbols[symbol].reference;
-  return isResolved(reference);
-}
-
-bool Reader::isResolved(const string& symbol) {
-  return symbols.at(symbol).type != EXT;
-}
-
-void Reader::resolveSymbol(const string& symbol) {
-  const string& reference = symbols[symbol].reference;
-  symbols[symbol].value += symbols[reference].value;
-  symbols[symbol].reference = reference;
-  symbols[symbol].type = symbols[reference].type;
-
-  if (waiting.find(symbol) != waiting.end()) {
-    for (const string& w : waiting[symbol]) {
-      if (!isResolved(w) && canResolve(w))
-        resolveSymbol(w);
-    }
-  }
 }
 
 void Reader::addBytes(int value, int size, int offset, vector<char>& bytes) {

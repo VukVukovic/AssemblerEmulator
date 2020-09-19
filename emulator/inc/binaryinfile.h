@@ -7,9 +7,11 @@ using namespace std;
 
 class BinaryInFile {
   ifstream infile;
+  string file;
 
 public:
   BinaryInFile(const string& path);
+  string getName() const { return file; }
 
   template<class T>
   T read() {
