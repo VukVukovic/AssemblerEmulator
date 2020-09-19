@@ -1,11 +1,11 @@
 #ifndef READER_H
 #define READER_H
 
-#include "../commontypes.h"
 #include <map>
 #include <string>
 #include <vector>
 using namespace std;
+#include "externtypes.h"
 
 class BinaryInFile;
 class Memory;
@@ -26,6 +26,8 @@ class Reader {
   bool canResolve(const string& symbol);
   bool isResolved(const string& symbol);
 
+  static void addBytes(int value, int size, int offset, vector<char>& bytes);
+  
 public:
   void read(const vector<string>& files);
   void resolveSymbols();

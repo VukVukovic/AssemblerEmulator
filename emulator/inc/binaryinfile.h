@@ -2,7 +2,7 @@
 #define BINARYINFILE_H
 
 #include <fstream>
-#include "../commontypes.h"
+#include "externtypes.h"
 using namespace std;
 
 class BinaryInFile {

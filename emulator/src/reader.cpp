@@ -1,9 +1,8 @@
 #include "reader.h"
 #include "emulatorexception.h"
 #include "binaryinfile.h"
-#include <iostream>
-#include "../encoding.h"
 #include "memory.h"
+#include <iostream>
 
 string relos[] = { "R_8", "R_16", "R_PC"};
 string types[] = { "EXT", "ABS", "REL" };
@@ -92,7 +91,7 @@ void Reader::readFile(BinaryInFile& file) {
     for (auto& relo : fr.second) {
       if (sections.find(relo.symbol) != sections.end() && offsets.find(relo.symbol) != offsets.end()) {
         relo.offset += offsets[relo.symbol];
-        Encoding::addBytes(offsets[relo.symbol], relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
+        addBytes(offsets[relo.symbol], relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
       }
       relocations[reloForSection].push_back(relo);
     }
@@ -157,15 +156,15 @@ void Reader::resolveRelocations(const map<string, int>& startingAddress) {
     const string& reloForSection = reloSection.first;
     for (const auto& relo : reloSection.second) {
       if (relo.type == R_PC) {
-        Encoding::addBytes(-relo.offset, 2, relo.offset, sections[reloForSection]);
+        addBytes(-relo.offset, 2, relo.offset, sections[reloForSection]);
       }
 
       if (sections.find(relo.symbol) != sections.end()) {
-        Encoding::addBytes(startingAddress.at(relo.symbol), relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
+        addBytes(startingAddress.at(relo.symbol), relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
       } else if (symbols.find(relo.symbol) != symbols.end()) {
-        Encoding::addBytes(symbols[relo.symbol].value, relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
+        addBytes(symbols[relo.symbol].value, relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
         if (symbols[relo.symbol].type == REL)
-          Encoding::addBytes(startingAddress.at(symbols[relo.symbol].reference), relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
+          addBytes(startingAddress.at(symbols[relo.symbol].reference), relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
       } else {
         error = true;
         if (notResolved.length()>0)
@@ -248,4 +247,16 @@ void Reader::resolveSymbol(const string& symbol) {
         resolveSymbol(w);
     }
   }
+}
+
+void Reader::addBytes(int value, int size, int offset, vector<char>& bytes) {
+    int16_t currValue;
+    if (size == 1)
+      currValue = bytes[offset];
+    else {
+      currValue = (bytes[offset+1] << 8) | bytes[offset];
+    }
+    currValue += value;
+    for (int i = 0; i < size; i++)
+        bytes[offset + i] = (char)((currValue>>(8*i)) & 0xFF); // little endian
 }

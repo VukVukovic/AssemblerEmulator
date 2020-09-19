@@ -76,7 +76,7 @@ class CPU {
   void timerTick();
 
 public:
-  CPU(Memory& memory) : memory(memory), registers(REG_NUM, 0) {};
+  CPU(Memory& memory) : registers(REG_NUM, 0), memory(memory) {};
   void start();
   void interruptMark(int i);
 };
