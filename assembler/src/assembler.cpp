@@ -1,9 +1,9 @@
 #include <iostream>
-#include <iomanip>
 #include "driver.h"
 #include "code.h"
+using namespace std;
 
-int main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   string inputFile, outputFile;
   bool nextOutput = false;

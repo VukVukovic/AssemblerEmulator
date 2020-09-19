@@ -92,5 +92,14 @@ void Code::generateObjectFile(const string& path) const {
 }
 
 void Code::printInfo(ostream& os) const {
-  os << "PRINTING TEXT OUTPUT" << endl;
+  os << endl << "---------------------" << endl;
+  os << "SYMBOLS: "<< endl;
+  symbolTable.printSymbolTable(os);
+
+  os << endl << "-------------------------------" << endl;
+  for (auto &p : encodedSections) {
+    os << endl << "SECTION: " << p.first << endl;
+    for (auto byte : p.second.getBytes())
+      os << byte << " ";
+  }
 }

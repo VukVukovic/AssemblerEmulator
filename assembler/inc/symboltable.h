@@ -35,7 +35,7 @@ public:
 
   void includeExtern();
 
-  void printSymbolTable(ostream &out);
+  void printSymbolTable(ostream &out) const;
 
   void checkConsistency() const;
 

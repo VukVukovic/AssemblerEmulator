@@ -13,7 +13,7 @@ void SymbolTable::addGlobal(const string& symbol) {
   globalSymbols.insert(symbol);
 }
 
-void SymbolTable::printSymbolTable(ostream &out) {
+void SymbolTable::printSymbolTable(ostream &out) const {
   string types[3] = {"EXT", "ABS", "REL"};
   for (auto s : symbols) {
     out << s.first << '\t' << s.second.value << '\t' << s.second.reference << '\t' << types[s.second.type] << std::endl;
