@@ -4,8 +4,8 @@
 # include <cstdlib>
 # include <cstring> // strerror
 # include <string>
-# include "driver.hh"
-# include "parser.hh"
+# include "driver.h"
+# include "parser.h"
 %}
 
 %option noyywrap nounput noinput batch debug

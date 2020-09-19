@@ -28,7 +28,7 @@
 %define parse.error verbose
 
 %code {
-  #include "driver.hh"
+  #include "driver.h"
   #include "code.h"
   #include <iostream>
 }

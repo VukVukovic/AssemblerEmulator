@@ -1,6 +1,6 @@
 #include <iostream>
 #include <iomanip>
-#include "driver.hh"
+#include "driver.h"
 #include "code.h"
 
 int main (int argc, char *argv[])
@@ -27,11 +27,6 @@ int main (int argc, char *argv[])
     return 0;
   }
 
-  if (outputFile.size() == 0) {
-    cout << "Output file not specified!" << endl;
-    return 0;
-  }
-
   Code code;
   driver drv(code);
 
@@ -39,7 +34,17 @@ int main (int argc, char *argv[])
     try {
       code.resolveSymbols();
       code.backpatch();
-      code.generateObjectFile(outputFile);
+
+      if (printText)
+        code.printInfo(cout);
+
+      if (outputFile.size() == 0) {
+        if (!printText)
+          cout << "Output file not specified!" << endl;
+        return 0;
+      } else {
+        code.generateObjectFile(outputFile);
+      }
     } catch (const AssemblerException& e) {
       cout << e.getProblem() << endl;
     }

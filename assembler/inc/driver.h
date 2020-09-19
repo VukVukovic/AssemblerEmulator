@@ -1,8 +1,8 @@
-#ifndef DRIVER_HH
-# define DRIVER_HH
+#ifndef DRIVER_H
+# define DRIVER_H
 # include <string>
 # include <map>
-# include "parser.hh"
+# include "parser.h"
 
 # define YY_DECL \
   yy::parser::symbol_type yylex (driver& drv)

@@ -13,13 +13,12 @@ using namespace std;
 
 class Code {
     string currentSection;
-
-public:
     SymbolTable symbolTable;
     EquTable equTable;
     Relocations relocations;
     map<string, Encoding> encodedSections;
 
+public:
     void beginSection(const string& section); // .section
     void addInstructionDirective(const Encoding& encoding); // instructions, .byte, .word, .skip
 
@@ -31,8 +30,8 @@ public:
 
     void resolveSymbols();
     void backpatch();
-
-    void generateObjectFile(const string& path);
+    void generateObjectFile(const string& path) const;
+    void printInfo(ostream& os) const;
 };
 
 #endif

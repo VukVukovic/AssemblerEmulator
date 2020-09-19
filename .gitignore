@@ -7,14 +7,8 @@
 # Unignore all dirs
 !*/
 
-#LLdb
-main.dSYM/
-
-#Flex/Bison
-location.hh
-parser.cc
-parser.hh
-scanner.cpp
+# Ignore building dirs
+*/build
 
 # Prerequisites
 *.d
@@ -50,5 +44,3 @@ scanner.cpp
 *.app
 
 .DS_Store
-build/
-assembler

@@ -64,7 +64,7 @@ void Code::backpatch() {
   }
 }
 
-void Code::generateObjectFile(const string& path) {
+void Code::generateObjectFile(const string& path) const {
   BinaryOutFile outFile(path);
 
   set<string> symbolsToExport = symbolTable.getExportSymbols();
@@ -89,4 +89,8 @@ void Code::generateObjectFile(const string& path) {
     for (const RelEntry& relEntry : relo.second)
       outFile.write(relEntry);
   }
+}
+
+void Code::printInfo(ostream& os) const {
+  os << "PRINTING TEXT OUTPUT" << endl;
 }
