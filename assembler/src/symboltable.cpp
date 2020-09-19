@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include "symboltable.h"
 
 void SymbolTable::addExtern(const string& symbol) {
@@ -13,12 +14,29 @@ void SymbolTable::addGlobal(const string& symbol) {
   globalSymbols.insert(symbol);
 }
 
-void SymbolTable::printSymbolTable(ostream &out) const {
-  string types[3] = {"EXT", "ABS", "REL"};
-  for (auto s : symbols) {
-    out << s.first << '\t' << s.second.value << '\t' << s.second.reference << '\t' << types[s.second.type] << std::endl;
+void SymbolTable::printSymbolEntry(const SymbolEntry& se, ostream &out) const {
+  string reference = se.reference;
+  if (se.type == ABS) reference = "ABS";
+  if (externSymbols.find(se.symbol) != externSymbols.end()) reference = "UND";
+
+  char bind = (globalSymbols.find(se.symbol) != globalSymbols.end()
+                || externSymbols.find(se.symbol) != externSymbols.end()) ? 'g' : 'l';
+  out << left << setw(20) << se.symbol << setw(10) << se.value << setw(20) << reference << setw(5) << bind;
+  out << endl;
+}
+
+void SymbolTable::printSymbolTable(ostream &out, const string& line) const {
+  out << "Symbol Table" << endl << line << endl;
+  out << left << setw(20) << "Name";
+  out << setw(10)  << "Value" << setw(20) << "Reference" << setw(5) << "Bind" << endl << line << endl;
+  for (auto &section : sections) {
+    printSymbolEntry(symbols.at(section), out);
   }
-  out << "----------------------------" << endl;
+  for (const auto &p : symbols) {
+    if (sections.find(p.first) != sections.end()) continue;
+    printSymbolEntry(p.second, out);
+  }
+  out << line << endl;
 }
 
 void SymbolTable::includeExtern() {
@@ -60,10 +78,12 @@ void SymbolTable::checkAlreadyDefined(const string& symbol) const {
 
 void SymbolTable::checkConsistency() const {
   for (const string& symbol : globalSymbols) {
-    if (externSymbols.find(symbol) != externSymbols.end())
-      throw AssemblerException("Symbol " + symbol + " cannot be marked as global since it's extern");
+    if (!isSymbolDefined(symbol))
+      throw AssemblerException("Cannot export undefined symbol " + symbol);
+    if (symbols.at(symbol).type == EXT)
+      throw AssemblerException("Symbol " + symbol + " cannot be marked global since it's extern or depends on extern");
     if (sections.find(symbol) != sections.end())
-      throw AssemblerException("Sections cannot be marked as global (" + symbol + ")");
+      throw AssemblerException("Symbol " + symbol + " cannot be marked global since it's a section");
   }
 }
 

@@ -2,7 +2,9 @@
 #define BINARYOUTFILE_H
 
 #include <fstream>
-#include "commontypes.h"
+#include "symboltable.h"
+#include "relocations.h"
+
 using namespace std;
 
 class BinaryOutFile {

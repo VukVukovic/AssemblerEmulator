@@ -11,12 +11,23 @@
 
 using namespace std;
 
+enum ChunkType { SECTION, RELOCATION, SYMBOLS };
+
+struct ChunkHeader {
+  ChunkType type;
+  int size;
+};
+
 class Code {
+    static const string line;
+
     string currentSection;
     SymbolTable symbolTable;
     EquTable equTable;
     Relocations relocations;
     map<string, Encoding> encodedSections;
+
+    static string getHex(char byte);
 
 public:
     void beginSection(const string& section); // .section

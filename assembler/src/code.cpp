@@ -3,6 +3,8 @@
 #include "encoding.h"
 #include "binaryoutfile.h"
 
+const string Code::line(65, '-');
+
 void Code::beginSection(const string& section) {
     symbolTable.defineSection(section);
     currentSection = section;
@@ -46,19 +48,29 @@ void Code::backpatch() {
       if (!symbolTable.isSymbolDefined(bp.symbol))
         throw AssemblerException("Symbol " + bp.symbol + " is not defined or external to be used");
 
-      Encoding::addBytes(symbolTable.getValue(bp.symbol), bp.size, bp.location, es.second.bytes);
       if (bp.pcRelOffset > 0) {
         Encoding::addBytes(-bp.pcRelOffset, bp.size, bp.location, es.second.bytes);
-
-        if (symbolTable.getReference(bp.symbol) == section) {
-          Encoding::addBytes(-bp.location, bp.size, bp.location, es.second.bytes);
-        } else {
-          relocations.addRelocation(section, R_PC, symbolTable.getReference(bp.symbol), bp.location);
-        }
       }
-      else if (symbolTable.getType(bp.symbol) != ABS) {
-        RelocationType type = (bp.size == 1) ? R_8 : R_16;
-        relocations.addRelocation(section, type, symbolTable.getReference(bp.symbol), bp.location);
+
+      if (symbolTable.isSymbolGlobalBinding(bp.symbol)) {
+        // global and pure extern symbols are left for linker to handle
+        RelocationType type = (bp.pcRelOffset>0) ? R_PC : ((bp.size == 1) ? R_8 : R_16);
+        relocations.addRelocation(section, type, bp.symbol, bp.location);
+        continue;
+      }
+
+      // all other relocation types add symbol value
+      Encoding::addBytes(symbolTable.getValue(bp.symbol), bp.size, bp.location, es.second.bytes);
+
+      if (bp.pcRelOffset > 0 && symbolTable.getReference(bp.symbol) == section) {
+        // symbol in the same section is resolved
+        Encoding::addBytes(-bp.location, bp.size, bp.location, es.second.bytes);
+        continue;
+      }
+
+      if (symbolTable.getType(bp.symbol) != ABS) {
+          RelocationType type = (bp.pcRelOffset>0) ? R_PC : ((bp.size == 1) ? R_8 : R_16);
+          relocations.addRelocation(section, type, symbolTable.getReference(bp.symbol), bp.location);
       }
     }
   }
@@ -91,15 +103,32 @@ void Code::generateObjectFile(const string& path) const {
   }
 }
 
-void Code::printInfo(ostream& os) const {
-  os << endl << "---------------------" << endl;
-  os << "SYMBOLS: "<< endl;
-  symbolTable.printSymbolTable(os);
+string Code::getHex(char byte) {
+  static const char hexChars[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+  string s;
+  s += hexChars[ ( byte & 0xF0 ) >> 4 ];
+  s += hexChars[ ( byte & 0x0F ) >> 0 ];
+  return s;
+}
 
-  os << endl << "-------------------------------" << endl;
+void Code::printInfo(ostream& os) const {
+  symbolTable.printSymbolTable(os, line);
+
+  os << endl;
   for (auto &p : encodedSections) {
-    os << endl << "SECTION: " << p.first << endl;
-    for (auto byte : p.second.getBytes())
-      os << byte << " ";
+    if (p.second.getBytes().size() > 0) {
+      os << "Section " << p.first << endl;
+      os << line << endl;
+      int cnt = 0;
+      for (auto byte : p.second.getBytes()) {
+        os << getHex(byte) << " ";
+        if (++cnt % 10 == 0)
+          os << endl;
+      }
+      if (cnt % 10 != 0) os << endl;
+      os << endl;
+    }
+
+    relocations.printRelocaions(p.first, os, line);
   }
 }
