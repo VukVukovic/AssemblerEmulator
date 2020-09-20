@@ -3,7 +3,6 @@
 #include "emulatorexception.h"
 #include "memory.h"
 #include "cpu.h"
-#include "terminal.h"
 #include <regex>
 using namespace std;
 
@@ -33,23 +32,18 @@ int main(int argc, char* argv[]) {
     cout << "No input files provided" << endl;
     return 0;
   }
-  
+
   Reader reader;
   Memory memory;
   CPU cpu(memory);
-  Terminal::getInstance().setCPU(&cpu);
-  Terminal::getInstance().setMemory(&memory);
 
   try {
     reader.read(files);
     reader.load(memory, places);
-    //Terminal::getInstance().start();
     cpu.start();
   } catch(const EmulatorException& e) {
     cout << e.getProblem() << endl;
   }
-
-  Terminal::getInstance().stop();
 
   return 0;
 }

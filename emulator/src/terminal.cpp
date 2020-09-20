@@ -1,44 +1,45 @@
 #include "terminal.h"
-#include "memory.h"
-#include "cpu.h"
 #include <unistd.h>
+#include <fcntl.h>
+#include "emulatorexception.h"
+#include "cpu.h"
+#include "memory.h"
 #include <iostream>
 
-void Terminal::start() {
-  if (started) return;
-  started = true;
-  tcgetattr(STDIN_FILENO, &originalTerm);
-  termios newTerm = originalTerm;
-  newTerm.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN | CSIZE | PARENB);
-  newTerm.c_cflag |= CS8;
-  newTerm.c_cc[VMIN]  = 1;
-  newTerm.c_cc[VTIME] = 0;
-  atexit(Terminal::cleanUpTerminal);
-  tcsetattr(STDIN_FILENO, TCSAFLUSH, &newTerm);
-  readingThread = thread(reading);
-}
-
-void Terminal::reading() {
-  while (true) {
-    char c = getchar();
-    if (Terminal::getInstance().ending) return;
-    Terminal::getInstance().memory->write(c, DATA_IN, 1);
-    Terminal::getInstance().cpu->interruptMark(3);
+void Terminal::setup() {
+  if (tcgetattr(STDIN_FILENO, &terminalBackup) < 0) {
+    throw EmulatorException("Terminal cannot be started");
   }
+
+  static struct termios raw = terminalBackup;
+  raw.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN);
+  raw.c_cflag &= ~(CSIZE | PARENB);
+  raw.c_cflag |= CS8;
+  raw.c_cc[VMIN]  = 1;
+  raw.c_cc[VTIME] = 0;
+
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw)) {
+    throw EmulatorException("Terminal cannot be started");
+  }
+
+  stdinFlags = fcntl(STDIN_FILENO, F_GETFL, 0);
+  fcntl(STDIN_FILENO, F_SETFL, stdinFlags | O_NONBLOCK);
 }
 
-void Terminal::cleanUpTerminal() {
-  tcsetattr(STDIN_FILENO, TCSAFLUSH, &(Terminal::getInstance().originalTerm));
+void Terminal::clean() {
+  tcsetattr(STDIN_FILENO, TCSAFLUSH, &terminalBackup);
+  fcntl(STDIN_FILENO, F_SETFL, stdinFlags);
 }
 
-void Terminal::stop() {
-  if (!started) return;
-  ending = true;
-  //cout << "Terminal simulation finished. Press any key to continue...";
-  cleanUpTerminal();
-}
+void Terminal::readInput() {
+  char c;
+  if (read(STDIN_FILENO, &c, 1) == 1) {
+    buffer.push(c);
+  }
 
-void Terminal::newData() {
-  char value = memory->read(DATA_OUT, 1);
-  cout << value;
+  if (buffer.size()>0 && cpu.canRequest(CPU::TERMINAL_INTERRUPT)) {
+    memory.write(DATA_IN, buffer.front(), 1);
+    buffer.pop();
+    cpu.interruptMark(CPU::TERMINAL_INTERRUPT);
+  }
 }

@@ -142,22 +142,31 @@ int16_t CPU::stackPop() {
 }
 
 void CPU::start() {
-  pc = 200;
+  pc = memory.read(0, 2);
+  cout << "STARTING FROM "<< pc << endl;
   sp = (uint16_t)MEM_SIZE;
   running = true;
 
+  terminal.setup();
+
   while (running) {
     int16_t pc_before = pc;
+
     try {
       readInstruction();
       executeInstruction();
       clearCurrentOperands();
     } catch (const InvalidInstruction& e) {
-      pc = pc_before;
-      goToInterrupt(1);
       clearCurrentOperands();
+      pc = pc_before;
+      goToInterrupt(INAVLID_INTERRUPT);
     }
+
+    timer.timerTick();
+    terminal.readInput();
   }
+
+  terminal.clean();
 }
 
 void CPU::clearCurrentOperands() {
@@ -228,7 +237,6 @@ void CPU::runALU() {
 void CPU::checkInterrupts() {
   if (readPswBit(I)) {
     int interruptHappened = -1;
-    interruptsMutex.lock();
     for (int i = 0; i < interrupts.size(); i++) {
       if (interrupts[i]) {
         interruptHappened = i;
@@ -236,16 +244,13 @@ void CPU::checkInterrupts() {
       }
     }
     interrupts[interruptHappened] = false;
-    interruptsMutex.unlock();
 
     goToInterrupt(interruptHappened);
   }
 }
 
 void CPU::interruptMark(int i) {
-  interruptsMutex.lock();
   interrupts[i] = true;
-  interruptsMutex.unlock();
 }
 
 void CPU::goToInterrupt(int i) {
@@ -253,33 +258,4 @@ void CPU::goToInterrupt(int i) {
   stackPush(psw);
   pc = memory.read(2*i, WORD);
   setPswBit(I, false);
-}
-
-void CPU::timerTick() {
-  milliseconds current = duration_cast<milliseconds>(
-    system_clock::now().time_since_epoch()
-  );
-
-  if (timer.sleeping && current - timer.previousTime >= timer.duration) {
-    timer.sleeping = false;
-    interruptMark(2);
-  }
-
-  if (!timer.sleeping) {
-    int8_t timerCfg = (memory.read(TIMER_CFG, 2) & 0x7);
-    switch (timerCfg) {
-      case 0x0: timer.duration = milliseconds(500); break;
-      case 0x1: timer.duration = milliseconds(1000); break;
-      case 0x2: timer.duration = milliseconds(1500); break;
-      case 0x3: timer.duration = milliseconds(2000); break;
-      case 0x4: timer.duration = milliseconds(5000); break;
-      case 0x5: timer.duration = milliseconds(10000); break;
-      case 0x6: timer.duration = milliseconds(30000); break;
-      case 0x7: timer.duration = milliseconds(60000); break;
-      default: break;
-    }
-    timer.sleeping = true;
-  }
-
-  timer.previousTime = current;
 }

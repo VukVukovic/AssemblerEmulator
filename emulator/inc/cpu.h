@@ -2,12 +2,11 @@
 #define CPU_H
 #include <cstdint>
 #include <vector>
-#include <mutex>
 #include "typesconstants.h"
-#include <chrono>
+#include "timer.h"
+#include "terminal.h"
 
 using namespace std;
-using namespace std::chrono;
 
 class Memory;
 class Operand;
@@ -45,7 +44,6 @@ class CPU {
   ALUUnit ALU;
 
   vector<bool> interrupts;
-  mutex interruptsMutex;
 
   Instruction current;
   bool running = false;
@@ -67,18 +65,18 @@ class CPU {
 
   void runALU();
 
-  struct Timer {
-    milliseconds previousTime;
-    milliseconds duration;
-    bool sleeping = false;
-  };
   Timer timer;
-  void timerTick();
+  Terminal terminal;
 
 public:
-  CPU(Memory& memory) : registers(REG_NUM, 0), memory(memory) {};
+  CPU(Memory& memory) : registers(REG_NUM, 0), memory(memory), timer(*this, memory), terminal(*this, memory) {};
   void start();
   void interruptMark(int i);
+  bool canRequest(int i) { return !interrupts[i]; }
+
+  static const int INAVLID_INTERRUPT = 1;
+  static const int TIMER_INTERRUPT = 2;
+  static const int TERMINAL_INTERRUPT = 3;
 };
 
 #endif
