@@ -6,6 +6,9 @@
 #include <string>
 #include <map>
 
+#include <thread>
+#include <chrono>
+
 #define WORD 2
 #define BYTE 1
 
@@ -88,7 +91,7 @@ void CPU::readInstruction() {
     }
   }
 
-  cout << endl;
+  //cout << endl;
 
   bool valid = true;
   for (int i = 0; i < current.operands.size(); i++)
@@ -140,9 +143,12 @@ int16_t CPU::stackPop() {
 
 void CPU::start() {
   pc = memory.read(0, 2);
-  cout << "STARTING FROM "<< pc << endl;
+  setPswBit(I, true);
+  memory.write(TIMER_CFG, 0, 2);
   sp = (uint16_t)MEM_SIZE;
   running = true;
+
+  cout << "STARTING FROM "<< pc << endl;
 
   terminal.setup();
 
@@ -162,6 +168,7 @@ void CPU::start() {
 
     timer.timerTick();
     terminal.readInput();
+    checkInterrupts();
   }
 
   terminal.clean();
@@ -233,6 +240,7 @@ void CPU::runALU() {
 }
 
 void CPU::checkInterrupts() {
+  //cout << "CHECKING INTERRUPTS " << readPswBit(I) << endl;
   if (readPswBit(I)) {
     int interruptHappened = -1;
     for (int i = 0; i < interrupts.size(); i++) {
@@ -241,9 +249,11 @@ void CPU::checkInterrupts() {
         break;
       }
     }
-    interrupts[interruptHappened] = false;
 
-    goToInterrupt(interruptHappened);
+    if (interruptHappened >= 0) {
+      interrupts[interruptHappened] = false;
+      goToInterrupt(interruptHappened);
+    }
   }
 }
 
