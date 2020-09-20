@@ -1,6 +1,5 @@
 #include "terminal.h"
 #include <unistd.h>
-#include <fcntl.h>
 #include "emulatorexception.h"
 #include "cpu.h"
 #include "memory.h"
@@ -15,20 +14,16 @@ void Terminal::setup() {
   raw.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN);
   raw.c_cflag &= ~(CSIZE | PARENB);
   raw.c_cflag |= CS8;
-  raw.c_cc[VMIN]  = 1;
+  raw.c_cc[VMIN]  = 0;
   raw.c_cc[VTIME] = 0;
 
   if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw)) {
-    throw EmulatorException("Terminal cannot be started");
+    throw EmulatorException("Terminal cannot be configured");
   }
-
-  stdinFlags = fcntl(STDIN_FILENO, F_GETFL, 0);
-  fcntl(STDIN_FILENO, F_SETFL, stdinFlags | O_NONBLOCK);
 }
 
 void Terminal::clean() {
   tcsetattr(STDIN_FILENO, TCSAFLUSH, &terminalBackup);
-  fcntl(STDIN_FILENO, F_SETFL, stdinFlags);
 }
 
 void Terminal::readInput() {

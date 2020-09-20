@@ -26,14 +26,14 @@ void CPU::readInstruction() {
   unsigned char byte = memory.read(pc, BYTE);
   pc++;
 
-  current.size = (byte >> 2)&1 + 1;
+  current.size = ((byte >> 2)&1) + 1;
 
   if ((byte >> 3) >= OP_NUM)
     throw InvalidInstruction{};
 
   current.opCode = (OpCodes)(byte >> 3);
 
-  cout << toInstr[current.opCode] << " ";
+  //cout << toInstr[current.opCode] << " ";
 
   for (int i = 0; i < operandNum[current.opCode]; i++) {
     byte = memory.read(pc, BYTE);
@@ -48,8 +48,8 @@ void CPU::readInstruction() {
         int16_t value = memory.read(pc, current.size);
         pc += current.size;
         current.operands.push_back(new Immed(current.size, value));
-        cout << "IMMED "; }
-        break;
+        //cout << "IMMED ";
+      } break;
       case REGDIR: {
         int reg = (byte >> 1)&0xF;
         if (reg == 0xF) reg = PSW;
@@ -57,18 +57,16 @@ void CPU::readInstruction() {
           throw InvalidInstruction{};
         bool high = byte & 1;
         current.operands.push_back(new RegisterDirect(current.size, reg, high, registers));
-        cout << "REGDIR ";
-      }
-      break;
+        //cout << "REGDIR ";
+      } break;
       case REGIND: {
         int reg = (byte >> 1)&0xF;
         if (reg == 0xF) reg = PSW;
         if (reg >= REG_NUM)
           throw InvalidInstruction{};
         current.operands.push_back(new RegisterIndirect(current.size, reg, 0, registers, memory));
-        cout << "REGIND ";
-      }
-      break;
+        //cout << "REGIND ";
+      } break;
       case REGINDDISP: {
         int reg = (byte >> 1)&0xF;
         if (reg == 0xF) reg = PSW;
@@ -77,14 +75,13 @@ void CPU::readInstruction() {
         int16_t displacement = memory.read(pc, WORD);
         pc += 2;
         current.operands.push_back(new RegisterIndirect(current.size, reg, displacement, registers, memory));
-        cout << "REGINDDISP ";
-      }
-      break;
+        //cout << "REGINDDISP ";
+      } break;
       case MEM: {
         int16_t location = memory.read(pc, WORD);
         pc += 2;
         current.operands.push_back(new MemLocation(current.size, location, memory));
-        cout << "MEM ";
+        //cout << "MEM ";
       }
       break;
       default: break;
@@ -153,6 +150,7 @@ void CPU::start() {
     int16_t pc_before = pc;
 
     try {
+      //cout << "READING " << pc;
       readInstruction();
       executeInstruction();
       clearCurrentOperands();
@@ -250,7 +248,8 @@ void CPU::checkInterrupts() {
 }
 
 void CPU::interruptMark(int i) {
-  interrupts[i] = true;
+  if (i >= 0 && i < INTERRUPT_ENTRIES)
+    interrupts[i] = true;
 }
 
 void CPU::goToInterrupt(int i) {

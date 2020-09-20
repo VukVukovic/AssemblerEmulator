@@ -69,11 +69,12 @@ class CPU {
   Terminal terminal;
 
 public:
-  CPU(Memory& memory) : registers(REG_NUM, 0), memory(memory), timer(*this, memory), terminal(*this, memory) {};
+  CPU(Memory& memory) : registers(REG_NUM, 0), memory(memory), interrupts(INTERRUPT_ENTRIES, 0), timer(*this, memory), terminal(*this, memory) {};
   void start();
   void interruptMark(int i);
   bool canRequest(int i) { return !interrupts[i]; }
 
+  static const int INTERRUPT_ENTRIES = 8;
   static const int INAVLID_INTERRUPT = 1;
   static const int TIMER_INTERRUPT = 2;
   static const int TERMINAL_INTERRUPT = 3;

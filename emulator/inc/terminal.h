@@ -13,7 +13,6 @@ class Terminal {
   queue<char> buffer;
   bool started = false;
   struct termios terminalBackup;
-  int stdinFlags;
 
 public:
   Terminal(CPU &cpu, Memory &memory) : cpu(cpu), memory(memory) {}

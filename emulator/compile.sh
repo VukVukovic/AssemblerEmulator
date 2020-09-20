@@ -1,1 +1,1 @@
-g++ -std=c++17 -Wall -o emulator src/*.cpp -Iinc
+g++ -g -std=c++17 -Wall -o emulator src/*.cpp -Iinc

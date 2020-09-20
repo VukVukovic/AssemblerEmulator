@@ -146,7 +146,7 @@ int Reader::checkLoadingPlaces(const map<string, int>& places) {
     int sectionSize = sections[place.first].size();
 
     cout << place.first << " " << start << " " << sectionSize;
-    if (start < 0 || start + sectionSize > MEM_SIZE)
+    if (start < 0 || start + sectionSize > MAPPED_REG_START)
       throw EmulatorException("Place for " + place.first + " is invalid (memory overflow)");
 
     for (const auto& t : taken) {
@@ -206,7 +206,7 @@ void Reader::load(Memory& memory, const map<string, int>& places) {
     int start = startingAddressFree;
     int size = section.second.size();
 
-    if (start + size > MEM_SIZE) {
+    if (start + size > MAPPED_REG_START) {
       throw EmulatorException("Cannot load all sections into memory");
     }
 

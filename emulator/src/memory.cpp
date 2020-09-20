@@ -17,8 +17,8 @@ void Memory::write(int location, int16_t value, int size) {
   else
     *(&memory[location]) = value;
 
+  // simulate terminal output
   if (location == DATA_OUT) {
-    // simulate terminal output
-    cout << (char)value;
+    cout << "OUT";
   }
 }
