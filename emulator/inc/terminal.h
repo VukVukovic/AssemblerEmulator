@@ -1,7 +1,7 @@
 #ifndef TERMINAL_H
 #define TERMINAL_H
-#include <termios.h>
 #include <queue>
+#include <termios.h>
 using namespace std;
 
 class CPU;
@@ -19,6 +19,9 @@ public:
   void setup();
   void clean();
   void readInput();
-  ~Terminal() { if (started) clean(); }
+  ~Terminal() {
+    if (started)
+      clean();
+  }
 };
 #endif

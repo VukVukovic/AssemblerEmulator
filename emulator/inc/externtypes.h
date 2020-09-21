@@ -19,18 +19,20 @@ struct SymbolEntry {
   string reference;
   SymbolType type;
   SymbolEntry() = default;
-  SymbolEntry(const string& symbol, int value, const string& reference, SymbolType type) :
-    symbol(symbol), value(value), reference(reference), type(type) {}
+  SymbolEntry(const string &symbol, int value, const string &reference,
+              SymbolType type)
+      : symbol(symbol), value(value), reference(reference), type(type) {}
 };
 
-enum RelocationType { R_8, R_16, R_PC};
+enum RelocationType { R_8, R_16, R_PC };
 
 struct RelEntry {
   RelocationType type;
   string symbol;
   int offset;
   RelEntry() = default;
-  RelEntry(RelocationType type, const string& symbol, int offset) : type(type), symbol(symbol), offset(offset) {}
+  RelEntry(RelocationType type, const string &symbol, int offset)
+      : type(type), symbol(symbol), offset(offset) {}
 };
 
 #endif

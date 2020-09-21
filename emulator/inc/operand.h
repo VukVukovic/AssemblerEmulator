@@ -1,7 +1,7 @@
 #ifndef OPERAND_H
 #define OPERAND_H
-#include <cstdint>
 #include "typesconstants.h"
+#include <cstdint>
 #include <vector>
 using namespace std;
 
@@ -22,10 +22,11 @@ public:
 class RegisterDirect : public Operand {
   int reg;
   bool high;
-  vector<int16_t>& registers;
+  vector<int16_t> &registers;
 
 public:
-  RegisterDirect(int size, int reg, bool high, vector<int16_t>& registers) : Operand(size), reg(reg), high(high), registers(registers) {}
+  RegisterDirect(int size, int reg, bool high, vector<int16_t> &registers)
+      : Operand(size), reg(reg), high(high), registers(registers) {}
   int16_t read() const override;
   void write(int16_t value) override;
 };
@@ -33,22 +34,25 @@ public:
 class RegisterIndirect : public Operand {
   int reg;
   int16_t displacement;
-  vector<int16_t>& registers;
-  Memory& memory;
+  vector<int16_t> &registers;
+  Memory &memory;
 
 public:
-  RegisterIndirect(int size, int reg, int16_t displacement, vector<int16_t>& registers, Memory& memory)
-    : Operand(size), reg(reg), displacement(displacement), registers(registers), memory(memory) {}
+  RegisterIndirect(int size, int reg, int16_t displacement,
+                   vector<int16_t> &registers, Memory &memory)
+      : Operand(size), reg(reg), displacement(displacement),
+        registers(registers), memory(memory) {}
   int16_t read() const override;
   void write(int16_t value) override;
 };
 
 class MemLocation : public Operand {
   uint16_t location;
-  Memory& memory;
+  Memory &memory;
 
 public:
-  MemLocation(int size, uint16_t location, Memory& memory) : Operand(size), location(location), memory(memory) {}
+  MemLocation(int size, uint16_t location, Memory &memory)
+      : Operand(size), location(location), memory(memory) {}
   int16_t read() const override;
   void write(int16_t value) override;
 };

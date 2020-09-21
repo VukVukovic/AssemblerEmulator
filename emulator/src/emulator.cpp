@@ -1,12 +1,12 @@
-#include <iostream>
-#include "reader.h"
+#include "cpu.h"
 #include "emulatorexception.h"
 #include "memory.h"
-#include "cpu.h"
+#include "reader.h"
+#include <iostream>
 #include <regex>
 using namespace std;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   vector<string> files;
   map<string, int> places;
   regex placeRegex("-place=([a-zA-Z_][a-zA-Z_0-9]*)@(0[xX][0-9a-fA-F]+)");
@@ -19,7 +19,8 @@ int main(int argc, char* argv[]) {
       string section = matches.str(1);
       int address = stoi(matches.str(2), nullptr, 16);
       if (places.find(section) != places.end()) {
-        cout << "Place for section " << section << " cannot be defined twice" << endl;
+        cout << "Place for section " << section << " cannot be defined twice"
+             << endl;
         return 0;
       }
       places[section] = address;
@@ -41,7 +42,7 @@ int main(int argc, char* argv[]) {
     reader.read(files);
     reader.load(memory, places);
     cpu.start();
-  } catch(const EmulatorException& e) {
+  } catch (const EmulatorException &e) {
     cout << e.getProblem() << endl;
   }
 

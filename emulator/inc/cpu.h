@@ -1,10 +1,10 @@
 #ifndef CPU_H
 #define CPU_H
+#include "terminal.h"
+#include "timer.h"
+#include "typesconstants.h"
 #include <cstdint>
 #include <vector>
-#include "typesconstants.h"
-#include "timer.h"
-#include "terminal.h"
 
 using namespace std;
 
@@ -12,30 +12,28 @@ class Memory;
 class Operand;
 
 struct InvalidInstruction : public exception {
-    virtual const char* what() const throw() {
-        return "Invalid instruction";
-    }
+  virtual const char *what() const throw() { return "Invalid instruction"; }
 };
 
 class CPU {
   vector<int16_t> registers;
-  uint16_t& pc = (uint16_t&)registers[PC];
-  uint16_t& sp = (uint16_t&)registers[SP];
-  uint16_t& psw = (uint16_t&)registers[PSW];
+  uint16_t &pc = (uint16_t &)registers[PC];
+  uint16_t &sp = (uint16_t &)registers[SP];
+  uint16_t &psw = (uint16_t &)registers[PSW];
 
-  enum PswBit { Z, O, C, N, I};
+  enum PswBit { Z, O, C, N, I };
   static const uint16_t MASKS[];
   static const vector<int> operandNum;
 
-  Memory& memory;
+  Memory &memory;
 
   struct Instruction {
     OpCodes opCode;
     int size;
-    vector<Operand*> operands;
+    vector<Operand *> operands;
   };
 
-  struct ALUUnit{
+  struct ALUUnit {
     int16_t src;
     int16_t dst;
     int16_t result;
@@ -69,7 +67,10 @@ class CPU {
   Terminal terminal;
 
 public:
-  CPU(Memory& memory) : registers(REG_NUM, 0), memory(memory), interrupts(INTERRUPT_ENTRIES, false), timer(*this, memory), terminal(*this, memory) {};
+  CPU(Memory &memory)
+      : registers(REG_NUM, 0), memory(memory),
+        interrupts(INTERRUPT_ENTRIES, false), timer(*this, memory),
+        terminal(*this, memory){};
   void start();
   void interruptMark(int i);
   bool canRequest(int i) { return !interrupts[i]; }
