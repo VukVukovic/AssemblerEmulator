@@ -54,15 +54,15 @@ void Reader::readFile(BinaryInFile &file) {
 
   try {
     while (!file.eof()) {
-      ChunkHeader header = file.read<ChunkHeader>();
+      ChunkHeader header = file.readChunkHeader();
 
       if (header.type == SYMBOLS) {
         fileSymbols = readSymbols(file, header.size);
       } else if (header.type == SECTION) {
-        string section = file.read<string>();
+        string section = file.readString();
         fileSections.push_back({section, readSection(file, header.size)});
       } else if (header.type == RELOCATION) {
-        string section = file.read<string>();
+        string section = file.readString();
         fileRelocations.push_back({section, readRelocation(file, header.size)});
       }
     }
@@ -77,21 +77,21 @@ void Reader::readFile(BinaryInFile &file) {
 vector<char> Reader::readSection(BinaryInFile &file, int size) {
   vector<char> currentBytes;
   for (int i = 0; i < size; i++)
-    currentBytes.push_back(file.read<char>());
+    currentBytes.push_back(file.readChar());
   return currentBytes;
 }
 
 vector<RelEntry> Reader::readRelocation(BinaryInFile &file, int reloNum) {
   vector<RelEntry> relocations;
   for (int i = 0; i < reloNum; i++)
-    relocations.push_back(file.read<RelEntry>());
+    relocations.push_back(file.readRelEntry());
   return relocations;
 }
 
 vector<SymbolEntry> Reader::readSymbols(BinaryInFile &file, int symbolNum) {
   vector<SymbolEntry> symbols;
   for (int i = 0; i < symbolNum; i++)
-    symbols.push_back(file.read<SymbolEntry>());
+    symbols.push_back(file.readSymbolEntry());
   return symbols;
 }
 
