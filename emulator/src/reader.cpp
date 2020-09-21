@@ -120,13 +120,15 @@ void Reader::aggregateAndRelocate(vector<SymbolEntry>& fileSymbols, vector<pair<
    for (const auto& section : fileSections)
      sections[section.first].insert(sections[section.first].end(), section.second.begin(), section.second.end());
 
-
    for (auto& fr : fileRelocations) {
      const string& reloForSection = fr.first;
      for (auto& relo : fr.second) {
+       // change offset for relocation changing in memory
+       if (offsets.find(reloForSection) != offsets.end())
+        relo.offset += offsets[reloForSection];
+
        if (offsets.find(relo.symbol) != offsets.end()) {
          // change offset in bytes for symbol that references section
-         relo.offset += offsets[relo.symbol];
          addBytes(offsets[relo.symbol], relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
        }
        relocations[reloForSection].push_back(relo);
@@ -173,11 +175,14 @@ void Reader::resolveRelocations(const map<string, int>& startingAddress) {
     for (const auto& relo : reloSection.second) {
       if (relo.type == R_PC) {
         addBytes(-relo.offset, 2, relo.offset, sections[reloForSection]);
+        addBytes(-startingAddress.at(reloForSection), 2, relo.offset, sections[reloForSection]);
       }
 
       if (sections.find(relo.symbol) != sections.end()) {
+        // relocation for section
         addBytes(startingAddress.at(relo.symbol), relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
       } else if (symbols.find(relo.symbol) != symbols.end()) {
+        // reloction for other symbols
         addBytes(symbols[relo.symbol].value, relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
         if (symbols[relo.symbol].type == REL)
           addBytes(startingAddress.at(symbols[relo.symbol].reference), relo.type == R_8 ? 1 : 2, relo.offset, sections[reloForSection]);
@@ -216,18 +221,29 @@ void Reader::load(Memory& memory, const map<string, int>& places) {
 
   resolveRelocations(startingAddress);
 
-  for (const auto& sa : startingAddress)
+  cout << endl << "SECTIONS AFTER RELOCATIONS" << endl;
+  for (const auto& sa : startingAddress) {
+      cout << "SECTION " << sa.first << endl;
+      for (const auto& byte : sections[sa.first])
+        cout << getHex(byte) << " ";
+      cout << endl;
     memory.load(sa.second, sections[sa.first]);
+  }
+
 }
 
 void Reader::addBytes(int value, int size, int offset, vector<char>& bytes) {
     int16_t currValue;
-    if (size == 1)
+    if (size == 1) {
       currValue = bytes[offset];
-    else {
-      currValue = (bytes[offset+1] << 8) | bytes[offset];
+    } else {
+      currValue = *(int16_t*)(&bytes[offset]);
     }
     currValue += value;
-    for (int i = 0; i < size; i++)
-        bytes[offset + i] = (char)((currValue>>(8*i)) & 0xFF); // little endian
+
+    if (size == 1) {
+      bytes[offset] = currValue;
+    } else {
+      *(int16_t*)(&bytes[offset]) = currValue;
+    }
 }
