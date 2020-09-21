@@ -12,6 +12,7 @@ void ByteWordDirective::addLiteral(int value) {
 }
 
 void ByteWordDirective::addSymbol(string symbol) {
-  Encoding newDirective(vector<char>(size, 0), SymbolEncodingEntry(symbol, 0, size));
+  Encoding newDirective(vector<char>(size, 0),
+                        SymbolEncodingEntry(symbol, 0, size));
   encoding.add(newDirective);
 }

@@ -1,28 +1,27 @@
 #ifndef DRIVER_H
-# define DRIVER_H
-# include <string>
-# include <map>
-# include "parser.h"
+#define DRIVER_H
+#include "parser.h"
+#include <map>
+#include <string>
 
-# define YY_DECL \
-  yy::parser::symbol_type yylex (driver& drv)
+#define YY_DECL yy::parser::symbol_type yylex(driver &drv)
 YY_DECL;
 
-class driver
-{
-  Code& code;
+class driver {
+  Code &code;
+
 public:
-  driver (Code &code);
+  driver(Code &code);
 
   int result;
-  int parse (const std::string& f);
+  int parse(const std::string &f);
   std::string file;
   bool trace_parsing;
-  void scan_begin ();
-  void scan_end ();
+  void scan_begin();
+  void scan_end();
   bool trace_scanning;
   yy::location location;
 
-  Code& getCode() { return code; }
+  Code &getCode() { return code; }
 };
 #endif

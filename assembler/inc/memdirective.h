@@ -1,8 +1,8 @@
 #ifndef MEMDIRECTIVE_H
 #define MEMDIRECTIVE_H
 
-#include <string>
 #include "encoding.h"
+#include <string>
 using namespace std;
 
 class MemDirective {
@@ -13,6 +13,7 @@ public:
 
 class SkipDirective : public MemDirective {
   int size;
+
 public:
   SkipDirective(int size) : size(size) {}
   virtual Encoding getEncoding() const;
@@ -21,6 +22,7 @@ public:
 class ByteWordDirective : public MemDirective {
   int size;
   Encoding encoding;
+
 public:
   ByteWordDirective(int size) : size(size) {}
   virtual Encoding getEncoding() const { return encoding; }

@@ -1,10 +1,9 @@
-#include <iostream>
-#include "driver.h"
 #include "code.h"
+#include "driver.h"
+#include <iostream>
 using namespace std;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   string inputFile, outputFile;
   bool nextOutput = false;
   bool printText = false;
@@ -13,8 +12,7 @@ int main(int argc, char *argv[])
     if (nextOutput) {
       outputFile = current;
       nextOutput = false;
-    }
-    else if (current == "-t")
+    } else if (current == "-t")
       printText = true;
     else if (current == "-o")
       nextOutput = true;
@@ -45,7 +43,7 @@ int main(int argc, char *argv[])
       } else {
         code.generateObjectFile(outputFile);
       }
-    } catch (const AssemblerException& e) {
+    } catch (const AssemblerException &e) {
       cout << e.getProblem() << endl;
     }
   }
