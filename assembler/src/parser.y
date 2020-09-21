@@ -1,5 +1,5 @@
 %skeleton "lalr1.cc" /* -*- C++ -*- */
-%require "3.6.3"
+%require "3.5.1"
 %defines
 
 %define api.token.constructor
@@ -11,6 +11,7 @@
   class driver;
   class Code;
   #include <vector>
+  #include <algorithm>
   #include "register.h"
   #include "addressing.h"
   #include "instruction.h"
