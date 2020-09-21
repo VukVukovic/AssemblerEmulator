@@ -36,7 +36,7 @@ void CPU::readInstruction() {
 
   current.opCode = (OpCodes)(byte >> 3);
 
-  //cout << toInstr[current.opCode] << " ";
+  //cout << "READING " << pc-1 << " " << toInstr[current.opCode] << endl;
 
   for (int i = 0; i < operandNum[current.opCode]; i++) {
     byte = memory.read(pc, BYTE);
@@ -62,7 +62,7 @@ void CPU::readInstruction() {
         current.operands.push_back(new RegisterDirect(current.size, reg, high, registers));
         //cout << "REGDIR ";
       } break;
-      case REGIND: {
+      case REGIND:  {
         int reg = (byte >> 1)&0xF;
         if (reg == 0xF) reg = PSW;
         if (reg >= REG_NUM)
@@ -78,7 +78,7 @@ void CPU::readInstruction() {
         int16_t displacement = memory.read(pc, WORD);
         pc += 2;
         current.operands.push_back(new RegisterIndirect(current.size, reg, displacement, registers, memory));
-        //cout << "REGINDDISP ";
+        //cout << "REGINDDISP " << displacement << endl;
       } break;
       case MEM: {
         int16_t location = memory.read(pc, WORD);
@@ -145,7 +145,7 @@ void CPU::start() {
   pc = memory.read(0, 2);
   setPswBit(I, true);
   memory.write(TIMER_CFG, 0, 2);
-  sp = (uint16_t)MEM_SIZE;
+  sp = MAPPED_REG_START;
   running = true;
 
   cout << "STARTING FROM "<< pc << endl;
