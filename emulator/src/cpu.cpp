@@ -97,7 +97,7 @@ void CPU::readInstruction() {
   // cout << endl;
 
   bool valid = true;
-  for (int i = 0; i < current.operands.size(); i++)
+  for (int i = 0; i < (int)current.operands.size(); i++)
     valid &= current.operands[i]->isValid(
         current.opCode, current.operands.size() == 2 && i == 2);
 
@@ -302,7 +302,7 @@ void CPU::checkInterrupts() {
   // cout << "CHECKING INTERRUPTS " << readPswBit(I) << endl;
   if (readPswBit(I)) {
     int interruptHappened = -1;
-    for (int i = 0; i < interrupts.size(); i++) {
+    for (int i = 0; i < (int)interrupts.size(); i++) {
       if (interrupts[i]) {
         interruptHappened = i;
         break;
