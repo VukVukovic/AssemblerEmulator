@@ -14,11 +14,16 @@ void Encoding::addBytes(int value, int size, int offset, vector<char>& bytes) {
     if (size == 1)
       currValue = bytes[offset];
     else {
-      currValue = (bytes[offset+1] << 8) | bytes[offset];
+      currValue = *(int16_t*)&bytes[offset];
     }
+
     currValue += value;
-    for (int i = 0; i < size; i++)
-        bytes[offset + i] = (char)((currValue>>(8*i)) & 0xFF); // little endian
+
+    if (size == 1)
+      bytes[offset] = currValue;
+    else {
+      *(int16_t*)&bytes[offset] = currValue;
+    }
 }
 
 

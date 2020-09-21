@@ -116,7 +116,7 @@ public:
     PCRelative(const string& symbol) : symbol(symbol) {}
     AddressingType getType() const override { return PCREL; }
     int getBytesSize(int operSize) const override { return 1+2; }
-    void setPCRelOffset(int pcRelOffset) override { this->pcRelOffset = pcRelOffset; }
+    void setPCRelOffset(int pcRelOffset) override { this->pcRelOffset = pcRelOffset-1; } // sub 1 for descr 
 		Encoding getEncoding(int size) const override;
 };
 

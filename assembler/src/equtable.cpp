@@ -27,6 +27,9 @@ void EquTable::resolveSymbols(SymbolTable& symbolTable) {
 }
 
 void EquTable::addEqu(const string& equSymbol, int value, const vector<pair<int, string>>& usedSymbols) {
+  if (equTable.find(equSymbol) != equTable.end())
+    throw AssemblerException("Cannot redefine symbol " + equSymbol);
+    
   equTable[equSymbol] = EQUEntry(equSymbol, value, usedSymbols);
 
   for (auto us : usedSymbols)
