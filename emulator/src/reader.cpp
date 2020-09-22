@@ -3,7 +3,7 @@
 #include "emulatorexception.h"
 #include "memory.h"
 #include <iostream>
-
+/*
 string relos[] = {"R_8", "R_16", "R_PC"};
 string types[] = {"EXT", "ABS", "REL"};
 char const hex_chars[16] = {'0', '1', '2', '3', '4', '5', '6', '7',
@@ -14,7 +14,7 @@ string getHex(char byte) {
   s += hex_chars[(byte & 0xF0) >> 4];
   s += hex_chars[(byte & 0x0F) >> 0];
   return s;
-}
+}*/
 
 void Reader::read(const vector<string> &files) {
   for (const string &path : files) {
@@ -22,14 +22,15 @@ void Reader::read(const vector<string> &files) {
     readFile(file);
   }
 
-  cout << "---------------------" << endl << "SYMBOLS" << endl;
+  //cout << "---------------------" << endl << "SYMBOLS" << endl;
   for (const auto &se : symbols) {
-    cout << se.second.symbol << '\t' << se.second.value << '\t'
-         << se.second.reference << '\t' << types[se.second.type] << endl;
+    //cout << se.second.symbol << '\t' << se.second.value << '\t'
+      //   << se.second.reference << '\t' << types[se.second.type] << endl;
     if (sections.find(se.first) != sections.end())
       throw EmulatorException("Duplicate symbol " + se.first + " as section");
   }
 
+/*
   cout << "---------------------" << endl << "RELOCATIONS";
   for (const auto &reloSection : relocations) {
     cout << "SECTION " << reloSection.first << endl;
@@ -44,7 +45,7 @@ void Reader::read(const vector<string> &files) {
     for (const auto &byte : section.second)
       cout << getHex(byte) << " ";
     cout << endl;
-  }
+  } */
 }
 
 void Reader::readFile(BinaryInFile &file) {
@@ -157,7 +158,7 @@ int Reader::checkLoadingPlaces(const map<string, int> &places) {
     int start = place.second;
     int sectionSize = sections[place.first].size();
 
-    cout << place.first << " " << start << " " << sectionSize;
+    //cout << place.first << " " << start << " " << sectionSize;
     if (start < 0 || start + sectionSize > MAPPED_REG_START)
       throw EmulatorException("Place for " + place.first +
                               " is invalid (memory overflow)");
@@ -240,12 +241,12 @@ void Reader::load(Memory &memory, const map<string, int> &places) {
 
   resolveRelocations(startingAddress);
 
-  cout << endl << "SECTIONS AFTER RELOCATIONS" << endl;
+//  cout << endl << "SECTIONS AFTER RELOCATIONS" << endl;
   for (const auto &sa : startingAddress) {
-    cout << "SECTION " << sa.first << endl;
-    for (const auto &byte : sections[sa.first])
-      cout << getHex(byte) << " ";
-    cout << endl;
+//    cout << "SECTION " << sa.first << endl;
+//    for (const auto &byte : sections[sa.first])
+//      cout << getHex(byte) << " ";
+//    cout << endl;
     memory.load(sa.second, sections[sa.first]);
   }
 }

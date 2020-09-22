@@ -179,7 +179,7 @@ void CPU::start() {
   sp = MAPPED_REG_START;
   running = true;
 
-  cout << "STARTING FROM " << pc << endl;
+  //cout << "STARTING FROM " << pc << endl;
 
   terminal.setup();
 
@@ -273,7 +273,7 @@ void CPU::runALU() {
   setPswBit(Z, ALU.result == 0);
   setPswBit(N, ALU.result < 0);
 
-  uint16_t bitMask = (1 << (2 * current.size - 1)); // takes highest bit
+  uint16_t bitMask = (1 << (8 * current.size - 1)); // takes highest bit
 
   switch (current.opCode) {
   case ADD: {
@@ -285,10 +285,11 @@ void CPU::runALU() {
   case CMP: {
     setPswBit(O, (ALU.src ^ ALU.dst) & (ALU.dst ^ ALU.result) & bitMask);
     setPswBit(C, ALU.dst < ALU.src);
+    //cout << "COMPARING src: " << ALU.src << " dst: " << ALU.dst << " res: " << ALU.result << " O(" << readPswBit(O) << ") C(" << readPswBit(C) << ")" << " GREATER: " << signedGreater() << endl;
   } break;
   case SHL: {
-    setPswBit(C, (ALU.src < 2 * current.size) &&
-                     ((ALU.dst >> (2 * current.size - ALU.src)) & 1));
+    setPswBit(C, (ALU.src < 8 * current.size) &&
+                     ((ALU.dst >> (8 * current.size - ALU.src)) & 1));
   } break;
   case SHR: {
     setPswBit(C, (ALU.dst >> (ALU.src - 1)) & 1);

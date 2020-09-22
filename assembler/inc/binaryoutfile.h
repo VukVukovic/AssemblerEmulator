@@ -17,24 +17,9 @@ public:
     outfile.write((char *)&value, sizeof(T));
   }
 
-  void write(const string &value) {
-    int size = value.length();
-    outfile.write((char *)&size, sizeof(size));
-    outfile.write(value.c_str(), size);
-  }
-
-  void write(const SymbolEntry &entry) {
-    write(entry.symbol);
-    write(entry.value);
-    write(entry.reference);
-    write(entry.type);
-  }
-
-  void write(const RelEntry &entry) {
-    write(entry.type);
-    write(entry.symbol);
-    write(entry.offset);
-  }
+  void write(const string &value);
+  void write(const SymbolEntry &entry);
+  void write(const RelEntry &entry);
 
   ~BinaryOutFile() { outfile.close(); }
 };

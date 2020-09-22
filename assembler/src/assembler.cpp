@@ -33,8 +33,11 @@ int main(int argc, char *argv[]) {
       code.resolveSymbols();
       code.backpatch();
 
-      if (printText)
+      if (printText) {
+        cout << "Assembling " << inputFile << endl << endl;
         code.printInfo(cout);
+        cout << endl << inputFile << " assembled" << endl;
+      }
 
       if (outputFile.size() == 0) {
         if (!printText)
