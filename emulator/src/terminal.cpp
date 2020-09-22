@@ -4,6 +4,21 @@
 #include "memory.h"
 #include <iostream>
 #include <unistd.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <termios.h>
+
+struct termios terminalBackup;
+volatile int killed = 0;
+
+void restoreFlags() {
+  tcsetattr(STDIN_FILENO, TCSAFLUSH, &terminalBackup);
+}
+
+void cleanTerminal(int sig){ 
+  restoreFlags();
+  killed = 1;
+}
 
 void Terminal::setup() {
   if (tcgetattr(STDIN_FILENO, &terminalBackup) < 0) {
@@ -17,12 +32,19 @@ void Terminal::setup() {
   raw.c_cc[VMIN] = 0;
   raw.c_cc[VTIME] = 0;
 
+  if (atexit(restoreFlags) != 0) {
+    throw EmulatorException("Cannot restore terminal");
+  }
+
+  atexit(restoreFlags);
+  signal(SIGINT, cleanTerminal); 
+
   if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw)) {
     throw EmulatorException("Terminal cannot be configured");
   }
 }
 
-void Terminal::clean() { tcsetattr(STDIN_FILENO, TCSAFLUSH, &terminalBackup); }
+void Terminal::clean() { restoreFlags(); }
 
 void Terminal::readInput() {
   char c;
@@ -35,4 +57,6 @@ void Terminal::readInput() {
     buffer.pop();
     cpu.interruptMark(CPU::TERMINAL_INTERRUPT);
   }
+
+  if (killed) exit(1);
 }
