@@ -9,12 +9,18 @@ BinaryInFile::BinaryInFile(const string &path) : file(path) {
 }
 
 SymbolEntry BinaryInFile::readSymbolEntry() {
-  return SymbolEntry(readString(), readInt(), readString(),
-                     (SymbolType)readInt());
+  string name = readString();
+  int value = readInt();
+  string reference = readString();
+  SymbolType symbolType = (SymbolType)readInt();
+  return SymbolEntry(name, value, reference, symbolType);
 }
 
 RelEntry BinaryInFile::readRelEntry() {
-  return RelEntry((RelocationType)readInt(), readString(), readInt());
+  RelocationType relocationType = (RelocationType)readInt();
+  string symbol = readString();
+  int offset = readInt();
+  return RelEntry(relocationType, symbol, offset);
 }
 
 ChunkHeader BinaryInFile::readChunkHeader() {

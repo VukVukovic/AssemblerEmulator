@@ -1,7 +1,6 @@
 #ifndef TERMINAL_H
 #define TERMINAL_H
 #include <queue>
-#include <termios.h>
 using namespace std;
 
 class CPU;
@@ -12,7 +11,6 @@ class Terminal {
   Memory &memory;
   queue<char> buffer;
   bool started = false;
-  struct termios terminalBackup;
 
 public:
   Terminal(CPU &cpu, Memory &memory) : cpu(cpu), memory(memory) {}
